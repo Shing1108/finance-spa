@@ -3114,7 +3114,7 @@ body.ios {
   .tx-note { font-style: italic; }
 
   /* 主題色斷點自動跟隨系統（加在最前面） */
-@media (prefers-color-scheme: dark) {
+
     :root:not([data-theme="light"]) {
       --text-color: #ecf0f1;
       --bg-color: #121212;
@@ -3131,7 +3131,7 @@ body.ios {
       --expense-color: #f05b4f;
       --transfer-color: #f9a825;
     }
-  }
+  
   body {
     transition: background 0.4s, color 0.4s;
   }
