@@ -4,6 +4,7 @@ import App from "./App";
 import "./styles.css";
 import { useFinanceStore } from "./store/financeStore";
 
+// 預設啟動一定要有 data-theme="light"
 if (!document.documentElement.hasAttribute('data-theme')) {
   document.documentElement.setAttribute('data-theme', 'light');
 }
@@ -14,7 +15,7 @@ function ApplySettingsEffect() {
     if (settings.darkMode) {
       document.documentElement.setAttribute("data-theme", "dark");
     } else {
-      document.documentElement.removeAttribute("data-theme","light");
+      document.documentElement.setAttribute("data-theme", "light");
     }
     document.documentElement.style.fontSize =
       settings.fontSize === "small"
