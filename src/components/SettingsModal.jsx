@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   alertThreshold: 80,
 };
 
-const { clearAllData } = useFinanceStore();
+
 
 export default function SettingsModal({ onClose }) {
   // 取 store 設定
