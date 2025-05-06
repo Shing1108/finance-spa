@@ -2,91 +2,106 @@ import { useFinanceStore } from "../store/financeStore";
 import { useState, useMemo } from "react";
 import { Modal } from "../components/Modal";
 
-// dnd-kit
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  TouchSensor
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-
-// 圖標清單（可依需求擴充）
+// 豐富的 FontAwesome icon 清單
 const ICON_LIST = [
-  "tag", "home", "shopping-cart", "car", "utensils", "money-bill", "gift", "plane", "heartbeat", "book"
+  "tag", "home", "utensils", "shopping-bag", "shopping-cart", "tshirt", "bus", "car", "train", "bicycle", "walking", "building", "university", "hotel",
+  "tooth", "vial", "pills", "briefcase-medical", "briefcase", "user-md", "graduation-cap", "book", "pen", "laptop", "mobile-alt", "desktop", "headphones",
+  "gamepad", "film", "ticket-alt", "music", "coffee", "beer", "cocktail", "glass-martini", "wine-glass", "pizza-slice", "bed", "plane", "heartbeat",
+  "money-bill-wave", "gift", "chart-line", "percentage", "plus-circle", "minus-circle", "coins", "wallet", "apple-alt", "paw", "camera", "cloud", "tree",
+  "leaf", "donate", "chart-pie", "star", "heart"
 ];
 
-// 可視化圖標選擇元件
+// 進階 icon picker 元件
 function IconPicker({ value, onChange }) {
+  const [showGrid, setShowGrid] = useState(false);
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
-      {ICON_LIST.map((iconName) => (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ textAlign: "center", marginBottom: 8 }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: "#ddd",
+            fontSize: 34,
+            color: "#444",
+            marginBottom: 6
+          }}
+        >
+          <i className={`fas fa-${value}`} />
+        </div>
+      </div>
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
         <button
           type="button"
-          key={iconName}
           style={{
-            border: value === iconName ? "2px solid #1976d2" : "1px solid #ccc",
-            background: value === iconName ? "#e3f2fd" : "#fff",
-            borderRadius: 8,
-            padding: 8,
-            cursor: "pointer",
-            outline: "none",
-            width: 40,
-            height: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
+            padding: "8px 22px",
+            fontSize: 18,
+            borderRadius: 18,
+            background: "#5a636c",
+            color: "#fff",
+            border: "none",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+            cursor: "pointer"
           }}
-          onClick={() => onChange({ target: { name: "icon", value: iconName } })}
-          title={iconName}
+          onClick={() => setShowGrid(g => !g)}
         >
-          <i className={`fas fa-${iconName}`} style={{ fontSize: 20, color: value === iconName ? "#1976d2" : "#444" }} />
+          選擇圖標
         </button>
-      ))}
+      </div>
+      {showGrid && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, 56px)",
+            gap: 16,
+            justifyContent: "center",
+            maxHeight: 260,
+            overflowY: "auto",
+            margin: "8px 0"
+          }}
+        >
+          {ICON_LIST.map(iconName => (
+            <button
+              key={iconName}
+              type="button"
+              title={iconName}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                background: value === iconName ? "#1976d2" : "#e0e0e0",
+                border: value === iconName ? "2px solid #1976d2" : "1px solid #ccc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 23,
+                color: value === iconName ? "#fff" : "#444",
+                cursor: "pointer",
+                outline: "none",
+                transition: "all 0.18s"
+              }}
+              onClick={() => {
+                onChange({ target: { name: "icon", value: iconName } });
+                setShowGrid(false);
+              }}
+            >
+              <i className={`fas fa-${iconName}`} />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// 可拖曳分類卡片
+// 可拖曳分類卡片（如需 dnd-kit，請自行補回）
 function SortableCategoryCard({ cat, onEdit, onDelete }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: cat.id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    cursor: "default",
-    position: "relative", // 讓拖曳把手能定位
-    userSelect: "none"
-  };
   return (
-    <div ref={setNodeRef} style={style} className="category-card">
-      {/* 拖曳把手 */}
-      <div
-        style={{
-          position: "absolute",
-          left: 12,
-          top: 20,
-          zIndex: 2,
-          cursor: "grab",
-          fontSize: 20,
-          color: "#888",
-          background: "none"
-        }}
-        {...attributes}
-        {...listeners}
-        onClick={e => e.stopPropagation()}
-        aria-label="拖曳排序"
-        tabIndex={0}
-      >
-        <i className="fas fa-grip-vertical"></i>
-      </div>
+    <div className="category-card">
       <div className="category-icon" style={{ backgroundColor: cat.color + "20", color: cat.color }}>
         <i className={`fas fa-${cat.icon}`} />
       </div>
@@ -119,7 +134,7 @@ export default function CategoriesPage() {
   const [form, setForm] = useState({
     name: "",
     type: "income",
-    icon: "tag",
+    icon: ICON_LIST[0],
     color: "#4CAF50",
     order: 0,
   });
@@ -129,26 +144,6 @@ export default function CategoriesPage() {
     () => categories.filter((c) => c.type === tab).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [categories, tab]
   );
-
-  // dnd-kit 感測器
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor)
-  );
-  
-  // 拖曳排序完成
-  function handleDragEnd(event) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = filteredCategories.findIndex(c => c.id === active.id);
-    const newIndex = filteredCategories.findIndex(c => c.id === over.id);
-    const newOrderArray = arrayMove(filteredCategories, oldIndex, newIndex);
-
-    // 直接依新順序更新 order
-    newOrderArray.forEach((cat, idx) => {
-      updateCategory(cat.id, { order: idx });
-    });
-  }
 
   function openAddModal(type) {
     setEditCat(null);
@@ -181,7 +176,6 @@ export default function CategoriesPage() {
     if (editCat) {
       updateCategory(editCat.id, form);
     } else {
-      // 新增時 order 設為當前最後
       addCategory({ ...form, order: filteredCategories.length });
     }
     setModalOpen(false);
@@ -206,24 +200,20 @@ export default function CategoriesPage() {
         </div>
       </div>
       <div className="card-body">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={filteredCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-            <div className="categories-list card-view">
-              {filteredCategories.length === 0 ? (
-                <div className="empty-message">尚未設置{tab === "income" ? "收入" : "支出"}類別</div>
-              ) : (
-                filteredCategories.map((cat) => (
-                  <SortableCategoryCard
-                    key={cat.id}
-                    cat={cat}
-                    onEdit={openEditModal}
-                    onDelete={handleDelete}
-                  />
-                ))
-              )}
-            </div>
-          </SortableContext>
-        </DndContext>
+        <div className="categories-list card-view">
+          {filteredCategories.length === 0 ? (
+            <div className="empty-message">尚未設置{tab === "income" ? "收入" : "支出"}類別</div>
+          ) : (
+            filteredCategories.map((cat) => (
+              <SortableCategoryCard
+                key={cat.id}
+                cat={cat}
+                onEdit={openEditModal}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
+        </div>
       </div>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editCat ? "編輯類別" : "新增類別"}>
         <form onSubmit={handleFormSubmit}>
