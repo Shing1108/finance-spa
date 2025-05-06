@@ -192,11 +192,12 @@ button, input, select, textarea {
 .main-content {
     flex: 1;
     overflow-y: auto;
+    margin-top: var(--header-area-height);
     padding: var(--spacing-md);
     transition: padding var(--transition-normal);
     -webkit-overflow-scrolling: touch;
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height));
-    margin-top: calc(var(--header-area-height);
+   
 }
 
 .top-area {
@@ -215,16 +216,16 @@ button, input, select, textarea {
 }
 
 .top-navigation {
-    height: var(--nav-tabs-height);
     position: fixed;
     top: calc(var(--finances-snapshot-height) + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
+    height: var(--nav-tabs-height);
     z-index: 1100;
-    background-color: var(--card-bg);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    width: 100%;
-}
+    background: var(--card-bg);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
 
 .nav-tabs {
     display: flex;
@@ -735,27 +736,21 @@ button, input, select, textarea {
     pointer-events: none;
   }
 
-.finances-snapshot {
-    display: flex;
+  .finances-snapshot {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1000;
-    gap: var(--spacing-sm);
     padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));
-  padding-right: var(--spacing-sm);
-  padding-bottom: var(--spacing-sm);
-  padding-left: var(--spacing-sm);
-  height: var(--finances-snapshot-height);
-    margin-bottom: var(--spacing-sm);
-    overflow-x: auto; /* 允許在極窄屏幕上滾動 */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    
-}
+    padding-bottom: var(--spacing-sm);
+    padding-left: var(--spacing-sm);
+    padding-right: var(--spacing-sm);
+    height: var(--finances-snapshot-height);
+    display: flex;
+    align-items: center;
+    background: var(--bg-color);
+  }
 
 .finances-snapshot::-webkit-scrollbar {
     display: none;
