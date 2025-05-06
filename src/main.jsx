@@ -4,13 +4,17 @@ import App from "./App";
 import "./styles.css";
 import { useFinanceStore } from "./store/financeStore";
 
+if (!document.documentElement.hasAttribute('data-theme')) {
+  document.documentElement.setAttribute('data-theme', 'light');
+}
+
 function ApplySettingsEffect() {
   const settings = useFinanceStore((s) => s.settings);
   useEffect(() => {
     if (settings.darkMode) {
       document.documentElement.setAttribute("data-theme", "dark");
     } else {
-      document.documentElement.removeAttribute("data-theme");
+      document.documentElement.removeAttribute("data-theme","light");
     }
     document.documentElement.style.fontSize =
       settings.fontSize === "small"
