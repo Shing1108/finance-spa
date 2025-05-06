@@ -192,7 +192,7 @@ button, input, select, textarea {
     transition: padding var(--transition-normal);
     -webkit-overflow-scrolling: touch;
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height));
-    margin-top: calc(var(--header-area-height) + env(safe-area-inset-top, 0px)); /* 為固定的頂部區域留出空間 */
+    margin-top:var(--header-area-height); /* 為固定的頂部區域留出空間 */
 }
 
 .top-area {
@@ -724,7 +724,7 @@ button, input, select, textarea {
 
 .fixed-top-bg {
     position: fixed;
-    top: env(safe-area-inset-top, 0px);
+    top: 0;
     left: 0;
     right: 0;
     height: 155px; /* 快照+導航欄總高度 */
@@ -741,7 +741,10 @@ button, input, select, textarea {
     right: 0;
     z-index: 1000;
     gap: var(--spacing-sm);
-    padding: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px)) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));
+  padding-right: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  padding-left: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
     overflow-x: auto; /* 允許在極窄屏幕上滾動 */
     scrollbar-width: none;
