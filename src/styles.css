@@ -192,7 +192,7 @@ button, input, select, textarea {
     transition: padding var(--transition-normal);
     -webkit-overflow-scrolling: touch;
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height));
-    margin-top: var(--header-area-height); /* 為固定的頂部區域留出空間 */
+    margin-top: calc(var(--header-area-height) + env(safe-area-inset-top, 0px)); /* 為固定的頂部區域留出空間 */
 }
 
 .top-area {
@@ -2212,7 +2212,7 @@ button, input, select, textarea {
     .main-content {
         padding: var(--spacing-sm);
         padding-bottom: 80px;
-        padding-top: 150px;
+        padding-top: calc(150px + env(safe-area-inset-top, 0px));
     }
     
     .card-header {
