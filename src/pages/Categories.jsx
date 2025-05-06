@@ -2,7 +2,7 @@ import { useFinanceStore } from "../store/financeStore";
 import { useState, useMemo } from "react";
 import { Modal } from "../components/Modal";
 
-// 豐富的 FontAwesome icon 清單
+// 大量 FontAwesome icon
 const ICON_LIST = [
   "tag", "home", "utensils", "shopping-bag", "shopping-cart", "tshirt", "bus", "car", "train", "bicycle", "walking", "building", "university", "hotel",
   "tooth", "vial", "pills", "briefcase-medical", "briefcase", "user-md", "graduation-cap", "book", "pen", "laptop", "mobile-alt", "desktop", "headphones",
@@ -11,40 +11,45 @@ const ICON_LIST = [
   "leaf", "donate", "chart-pie", "star", "heart"
 ];
 
-// 進階 icon picker 元件
+// 常用顏色
+const COLOR_SWATCHES = [
+  "#4CAF50", "#E91E63", "#2196F3", "#FF9800", "#795548", "#9C27B0", "#009688", "#F44336", "#607D8B", "#FFEB3B", "#3F51B5", "#00BCD4"
+];
+
+// 縮小版 icon picker
 function IconPicker({ value, onChange }) {
   const [showGrid, setShowGrid] = useState(false);
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ textAlign: "center", marginBottom: 8 }}>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ textAlign: "center", marginBottom: 6 }}>
         <div
           style={{
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 64,
-            height: 64,
+            width: 40,
+            height: 40,
             borderRadius: "50%",
             background: "#ddd",
-            fontSize: 34,
+            fontSize: 20,
             color: "#444",
-            marginBottom: 6
+            marginBottom: 4
           }}
         >
           <i className={`fas fa-${value}`} />
         </div>
       </div>
-      <div style={{ textAlign: "center", marginBottom: 18 }}>
+      <div style={{ textAlign: "center", marginBottom: 9 }}>
         <button
           type="button"
           style={{
-            padding: "8px 22px",
-            fontSize: 18,
-            borderRadius: 18,
+            padding: "3px 12px",
+            fontSize: 15,
+            borderRadius: 12,
             background: "#5a636c",
             color: "#fff",
             border: "none",
-            boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+            boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
             cursor: "pointer"
           }}
           onClick={() => setShowGrid(g => !g)}
@@ -56,12 +61,12 @@ function IconPicker({ value, onChange }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, 56px)",
-            gap: 16,
+            gridTemplateColumns: "repeat(auto-fill, 32px)",
+            gap: 8,
             justifyContent: "center",
-            maxHeight: 260,
+            maxHeight: 140,
             overflowY: "auto",
-            margin: "8px 0"
+            margin: "6px 0"
           }}
         >
           {ICON_LIST.map(iconName => (
@@ -70,19 +75,19 @@ function IconPicker({ value, onChange }) {
               type="button"
               title={iconName}
               style={{
-                width: 48,
-                height: 48,
+                width: 32,
+                height: 32,
                 borderRadius: "50%",
                 background: value === iconName ? "#1976d2" : "#e0e0e0",
                 border: value === iconName ? "2px solid #1976d2" : "1px solid #ccc",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 23,
+                fontSize: 16,
                 color: value === iconName ? "#fff" : "#444",
                 cursor: "pointer",
                 outline: "none",
-                transition: "all 0.18s"
+                transition: "all 0.15s"
               }}
               onClick={() => {
                 onChange({ target: { name: "icon", value: iconName } });
@@ -98,7 +103,43 @@ function IconPicker({ value, onChange }) {
   );
 }
 
-// 可拖曳分類卡片（如需 dnd-kit，請自行補回）
+// 顏色選擇器
+function ColorPicker({ value, onChange }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 7 }}>
+        {COLOR_SWATCHES.map(color => (
+          <button
+            key={color}
+            type="button"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: value === color ? "2px solid #2563eb" : "1px solid #ccc",
+              background: color,
+              boxShadow: value === color ? "0 0 4px #2563eb" : "none",
+              cursor: "pointer",
+              outline: "none"
+            }}
+            title={color}
+            onClick={() => onChange({ target: { name: "color", value: color } })}
+          />
+        ))}
+        {/* 保留自訂色 */}
+        <label style={{ display: "inline-block", marginLeft: 6, cursor: "pointer" }}>
+          <input
+            type="color"
+            style={{ width: 24, height: 24, border: "none", background: "none", padding: 0 }}
+            value={value}
+            onChange={onChange}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function SortableCategoryCard({ cat, onEdit, onDelete }) {
   return (
     <div className="category-card">
@@ -135,7 +176,7 @@ export default function CategoriesPage() {
     name: "",
     type: "income",
     icon: ICON_LIST[0],
-    color: "#4CAF50",
+    color: COLOR_SWATCHES[0],
     order: 0,
   });
 
@@ -151,7 +192,7 @@ export default function CategoriesPage() {
       name: "",
       type,
       icon: ICON_LIST[0],
-      color: "#4CAF50",
+      color: COLOR_SWATCHES[0],
       order: filteredCategories.length,
     });
     setModalOpen(true);
@@ -227,7 +268,7 @@ export default function CategoriesPage() {
           </div>
           <div className="form-group">
             <label>顏色</label>
-            <input type="color" className="form-control" name="color" value={form.color} onChange={handleFormChange} />
+            <ColorPicker value={form.color} onChange={handleFormChange} />
           </div>
           <div className="modal-footer">
             <button type="submit" className="btn btn-primary">保存</button>
