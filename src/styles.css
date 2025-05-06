@@ -197,7 +197,6 @@ button, input, select, textarea {
     transition: padding var(--transition-normal);
     -webkit-overflow-scrolling: touch;
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height));
-   
 }
 
 .top-area {
@@ -732,7 +731,7 @@ button, input, select, textarea {
     right: 0;
     height: 155px; /* 快照+導航欄總高度 */
     z-index: 900; /* 在快照和導航下方 */
-    background: var(--bg-color);
+    background: transparent;
     pointer-events: none;
   }
 
@@ -2216,7 +2215,6 @@ button, input, select, textarea {
     .main-content {
         padding: var(--spacing-sm);
         padding-bottom: 80px;
-        padding-top: calc(150px + env(safe-area-inset-top, 0px));
     }
     
     .card-header {
