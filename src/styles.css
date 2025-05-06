@@ -214,14 +214,14 @@ button, input, select, textarea {
 
 .top-navigation {
     position: fixed;
-    top: var(--finances-snapshot-height) ;
+    top: calc(var(--finances-snapshot-height) + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     height: var(--nav-tabs-height);
     z-index: 1100;
     background: var(--card-bg);
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
+}
   
 
 .nav-tabs {
@@ -739,10 +739,10 @@ button, input, select, textarea {
     left: 0;
     right: 0;
     z-index: 1000;
-    padding-top: var(--spacing-sm);
+    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));  /* ← 關鍵 */
     padding-bottom: var(--spacing-sm);
     height: var(--finances-snapshot-height);
-    min-height: var(--finances-snapshot-height); /* 確保內容不壓縮 */
+    min-height: var(--finances-snapshot-height);
     display: flex;
     align-items: center;
     background: var(--bg-color);
