@@ -19,7 +19,43 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-// 可拖曳分類卡片（僅在左側把手可拖，其餘區域可點擊）
+// 圖標清單（可依需求擴充）
+const ICON_LIST = [
+  "tag", "home", "shopping-cart", "car", "utensils", "money-bill", "gift", "plane", "heartbeat", "book"
+];
+
+// 可視化圖標選擇元件
+function IconPicker({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
+      {ICON_LIST.map((iconName) => (
+        <button
+          type="button"
+          key={iconName}
+          style={{
+            border: value === iconName ? "2px solid #1976d2" : "1px solid #ccc",
+            background: value === iconName ? "#e3f2fd" : "#fff",
+            borderRadius: 8,
+            padding: 8,
+            cursor: "pointer",
+            outline: "none",
+            width: 40,
+            height: 40,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+          onClick={() => onChange({ target: { name: "icon", value: iconName } })}
+          title={iconName}
+        >
+          <i className={`fas fa-${iconName}`} style={{ fontSize: 20, color: value === iconName ? "#1976d2" : "#444" }} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// 可拖曳分類卡片
 function SortableCategoryCard({ cat, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: cat.id });
   const style = {
@@ -31,7 +67,7 @@ function SortableCategoryCard({ cat, onEdit, onDelete }) {
   };
   return (
     <div ref={setNodeRef} style={style} className="category-card">
-      {/* 拖曳把手（僅此區塊可拖曳） */}
+      {/* 拖曳把手 */}
       <div
         style={{
           position: "absolute",
@@ -100,7 +136,6 @@ export default function CategoriesPage() {
     useSensor(TouchSensor)
   );
   
-
   // 拖曳排序完成
   function handleDragEnd(event) {
     const { active, over } = event;
@@ -120,7 +155,7 @@ export default function CategoriesPage() {
     setForm({
       name: "",
       type,
-      icon: "tag",
+      icon: ICON_LIST[0],
       color: "#4CAF50",
       order: filteredCategories.length,
     });
@@ -197,8 +232,8 @@ export default function CategoriesPage() {
             <input className="form-control" name="name" value={form.name} onChange={handleFormChange} required />
           </div>
           <div className="form-group">
-            <label>圖標(FontAwesome 名稱)</label>
-            <input className="form-control" name="icon" value={form.icon} onChange={handleFormChange} required />
+            <label>圖標</label>
+            <IconPicker value={form.icon} onChange={handleFormChange} />
           </div>
           <div className="form-group">
             <label>顏色</label>
