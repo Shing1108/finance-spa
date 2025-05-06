@@ -213,11 +213,10 @@ button, input, select, textarea {
 .top-navigation {
     background-color: var(--card-bg);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-
     width: 100%;
     height: var(--tabs-height);
     position: fixed;
-    top: 90px; /* 假設快照高度 50px */
+    top: calc(90px + env(safe-area-inset-top,0px)); /* 假設快照高度 50px */
     left: 0;
     right: 0;
     z-index: 1100;
