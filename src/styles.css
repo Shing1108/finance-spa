@@ -722,7 +722,7 @@ button, input, select, textarea {
 
 .fixed-top-bg {
     position: fixed;
-    top: 0;
+    top: env(safe-area-inset-top, 0px);
     left: 0;
     right: 0;
     height: 155px; /* 快照+導航欄總高度 */
@@ -739,7 +739,7 @@ button, input, select, textarea {
     right: 0;
     z-index: 1000;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm);
+    padding: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px)) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
     overflow-x: auto; /* 允許在極窄屏幕上滾動 */
     scrollbar-width: none;
@@ -2488,7 +2488,7 @@ button, input, select, textarea {
     .main-content {
         overflow: visible;
         padding: 0;
-        margin-top: 0; /* 移除頂部區域空間 */
+        margin-top: calc(var(--header-area-height) + env(safe-area-inset-top, 0px));
     }
     
     .card {
