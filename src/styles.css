@@ -437,6 +437,8 @@ button, input, select, textarea {
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+    margin: 5px;
+ 
 }
 
 .btn-primary {

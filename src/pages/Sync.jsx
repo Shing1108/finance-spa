@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { auth, provider, firestore } from "../firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
 import { useFinanceStore } from "../store/financeStore";
 import { mergeByUpdatedAt } from "../utils/mergeByUpdatedAt";
 
@@ -154,6 +154,23 @@ export default function SyncPage() {
     setUser(null);
   }
 
+  // 刪除雲端資料
+  async function handleDeleteCloudData() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("請先登入 Google 帳戶");
+      return;
+    }
+    if (!window.confirm("確定要刪除你在雲端（Google帳戶）上的所有存檔？此操作無法復原！")) return;
+  
+    try {
+      await deleteDoc(doc(firestore, "users", user.uid));
+      alert("雲端存檔已刪除。");
+    } catch (e) {
+      alert("刪除失敗：" + e.message);
+    }
+  }
+
   return (
     <div className="card" style={{ maxWidth: 480, margin: "0 auto" }}>
       <div className="card-header">
@@ -197,6 +214,13 @@ export default function SyncPage() {
           </button>
           <button className="btn btn-success" onClick={() => smartSync("manual")} disabled={!user || syncing}>
             智能雙向合併同步
+          </button>
+          <button
+          type="button"
+          className="btn btn-danger"
+          onClick={handleDeleteCloudData}
+          >
+            刪除雲端存檔
           </button>
         </div>
         <div style={{ marginTop: 16, color: "#888", fontSize: 13 }}>
