@@ -2197,8 +2197,10 @@ button, input, select, textarea {
 
 @media (max-width: 768px) {
     :root {
-        --header-area-height: 110px; /* 減小移動設備上的頂部區域高度 */
-    }
+        --finances-snapshot-height: 64px;
+        --nav-tabs-height: 40px;
+        --header-area-height: calc(var(--finances-snapshot-height) + var(--nav-tabs-height));
+      }
     
     .finances-snapshot {
         width: 100%;
