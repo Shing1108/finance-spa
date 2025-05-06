@@ -13,6 +13,8 @@ const DEFAULT_SETTINGS = {
   alertThreshold: 80,
 };
 
+const { clearAllData } = useFinanceStore();
+
 export default function SettingsModal({ onClose }) {
   // 取 store 設定
   const { settings, setSettings, clearAllData } = useFinanceStore();
@@ -25,8 +27,9 @@ export default function SettingsModal({ onClose }) {
   // 清除所有數據
   const handleClearData = () => {
     if (window.confirm("確定要清除所有數據嗎？此操作無法復原！")) {
-      clearAllData && clearAllData();
+      clearAllData();
       onClose();
+      window.location.reload();
     }
   };
 

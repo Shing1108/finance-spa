@@ -128,6 +128,23 @@ export const useFinanceStore = create(
             noteSuggestions: { ...s.noteSuggestions, [categoryId]: newNotes }
           };
         }),
+        clearAllData: () => {
+          // 1. 清空狀態
+          set({
+            settings: defaultSettings,
+            accounts: [],
+            categories: [],
+            transactions: [],
+            budgets: [],
+            savingsGoals: [],
+            recurringItems: [],
+            noteSuggestions: {},
+            exchangeRates: {},
+            lastRatesUpdate: null,
+          });
+          // 2. 清除 localStorage
+          localStorage.removeItem("finance-store-v2");
+        },
     }),
     {
       name: "finance-store-v2", // localStorage key
