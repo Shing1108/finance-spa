@@ -36,6 +36,7 @@ export default function Dashboard() {
 
   return (
     <div className="app-container">
+        <div style={{ height: 'env(safe-area-inset-top, 0px)' }} />
       <div className="fixed-top-bg"></div>
       <FinancesSnapshot />
       <TopNavigation activeTab={activeTab} onTabChange={setActiveTab} />
