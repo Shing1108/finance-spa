@@ -743,7 +743,6 @@ button, input, select, textarea {
     left: 0;
     right: 0;
     z-index: 1000;
-    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));
     padding-bottom: var(--spacing-sm);
     padding-left: var(--spacing-sm);
     padding-right: var(--spacing-sm);
