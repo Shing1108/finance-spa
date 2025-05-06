@@ -735,22 +735,19 @@ button, input, select, textarea {
   }
 
   .finances-snapshot {
-    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));
-    min-height: var(--finances-snapshot-height);
-    box-sizing: border-box;  
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1000;
+    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));
     padding-bottom: var(--spacing-sm);
-    padding-left: var(--spacing-sm);
-    padding-right: var(--spacing-sm);
     height: var(--finances-snapshot-height);
+    min-height: var(--finances-snapshot-height); /* 確保內容不壓縮 */
     display: flex;
     align-items: center;
     background: var(--bg-color);
-  }
+}
 
 .finances-snapshot::-webkit-scrollbar {
     display: none;
