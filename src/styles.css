@@ -77,7 +77,7 @@
     --header-area-height: 120px; /* 包含頂部信息區域 */
     --bottom-bar-height: 40px; /* 減少底部欄高度 */
 
-    --finances-snapshot-height: 72px;     /* 依你設計實際高度微調，含 padding */
+    --finances-snapshot-height: 90px;     /* 依你設計實際高度微調，含 padding */
   --nav-tabs-height: 45px;              /* 與 .top-navigation 的 height 一致 */
   --header-area-height: calc(var(--finances-snapshot-height) + var(--nav-tabs-height));
 }
@@ -196,7 +196,7 @@ button, input, select, textarea {
     transition: padding var(--transition-normal);
     -webkit-overflow-scrolling: touch;
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height));
-    margin-top: calc(var(--header-area-height) + env(safe-area-inset-top, 0px));
+    margin-top: calc(var(--header-area-height);
 }
 
 .top-area {
@@ -215,16 +215,15 @@ button, input, select, textarea {
 }
 
 .top-navigation {
-    background-color: var(--card-bg);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    width: 100%;
     height: var(--nav-tabs-height);
     position: fixed;
     top: calc(var(--finances-snapshot-height) + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     z-index: 1100;
-
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
 }
 
 .nav-tabs {
@@ -748,13 +747,14 @@ button, input, select, textarea {
   padding-right: var(--spacing-sm);
   padding-bottom: var(--spacing-sm);
   padding-left: var(--spacing-sm);
+  height: var(--finances-snapshot-height);
     margin-bottom: var(--spacing-sm);
     overflow-x: auto; /* 允許在極窄屏幕上滾動 */
     scrollbar-width: none;
     -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
     width: 100%;
-    height: var(--finances-snapshot-height);
+    
 }
 
 .finances-snapshot::-webkit-scrollbar {
