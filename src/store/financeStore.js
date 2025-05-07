@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Account } from "./Account";
-import { Category } from "./Category";
-import { Transaction } from "./Transaction";
-import { Budget } from "./Budget";
-import { SavingsGoal } from "./SavingsGoal";
-import { RecurringItem } from "./RecurringItem";
+import { Account } from "../models/Account";
+import { Category } from "../models/Category";
+import { Transaction } from "../models/Transaction";
+import { Budget } from "../models/Budget";
+import { SavingsGoal } from "../models/SavingsGoal";
+import { RecurringItem } from "../models/RecurringItem";
 
 const defaultSettings = {
   darkMode: false,

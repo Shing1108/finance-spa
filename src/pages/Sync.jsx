@@ -13,6 +13,11 @@ const ALL_KEYS = [
   "categories"
 ];
 
+// 輔助：轉為純物件
+function toPlain(arr) {
+  return (arr || []).map(x => (x && typeof x.toJSON === "function" ? x.toJSON() : x));
+}
+
 export default function SyncPage() {
   const [user, setUser] = useState(auth.currentUser);
   const [syncing, setSyncing] = useState(false);
@@ -65,7 +70,10 @@ export default function SyncPage() {
       // 2. 逐筆增量合併
       const merged = {};
       for (const key of ALL_KEYS) {
-        merged[key] = mergeByUpdatedAt(local[key] || [], cloudData[key] || []);
+        merged[key] = mergeByUpdatedAt(
+          toPlain(local[key] || []),
+          toPlain(cloudData[key] || [])
+        );
       }
       // 3. settings 合併，取 updatedAt 較新的
       let mergedSettings = { ...cloudData.settings, ...local.settings };
@@ -81,10 +89,12 @@ export default function SyncPage() {
       useFinanceStore.getState().setAll(merged);
 
       // 5. 同步上雲（只要本地有變更或雲端有新變更都會推）
-      await setDoc(doc(firestore, "users", user.uid), {
-        ...merged,
-        updatedAt: new Date().toISOString()
-      });
+      const uploadData = {};
+      for (const key of ALL_KEYS) uploadData[key] = toPlain(merged[key] || []);
+      uploadData.settings = merged.settings;
+      uploadData.updatedAt = new Date().toISOString();
+
+      await setDoc(doc(firestore, "users", user.uid), uploadData);
 
       const now = new Date().toLocaleString();
       setLastSyncTime(now);
@@ -104,7 +114,7 @@ export default function SyncPage() {
     try {
       const state = useFinanceStore.getState();
       const dataToSync = {};
-      for (const key of ALL_KEYS) dataToSync[key] = state[key] || [];
+      for (const key of ALL_KEYS) dataToSync[key] = toPlain(state[key] || []);
       dataToSync.settings = { ...(state.settings || {}), updatedAt: new Date().toISOString() };
       dataToSync.updatedAt = new Date().toISOString();
       await setDoc(doc(firestore, "users", user.uid), dataToSync);
@@ -127,7 +137,7 @@ export default function SyncPage() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const merged = {};
-        for (const key of ALL_KEYS) merged[key] = data[key] || [];
+        for (const key of ALL_KEYS) merged[key] = toPlain(data[key] || []);
         merged.settings = data.settings || {};
         useFinanceStore.getState().setAll(merged);
         alert("已強制從雲端覆蓋本地");
@@ -216,9 +226,9 @@ export default function SyncPage() {
             智能雙向合併同步
           </button>
           <button
-          type="button"
-          className="btn btn-danger"
-          onClick={handleDeleteCloudData}
+            type="button"
+            className="btn btn-danger"
+            onClick={handleDeleteCloudData}
           >
             刪除雲端存檔
           </button>
