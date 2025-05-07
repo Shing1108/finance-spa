@@ -45,6 +45,28 @@ function getBudgetPeriod(today, resetDay = 1) {
   }
 }
 
+// 計算單一預算的已用金額（支援主幣種轉換）
+function getBudgetExpense(budget, txList, mainCurrency, exchangeRates) {
+  const start = dayjs(`${budget.year}-${String(budget.month).padStart(2, "0")}-${String(budget.resetDay || 1).padStart(2, "0")}`);
+  const end = start.add(1, "month").subtract(1, "day");
+  return txList
+    .filter(
+      (tx) =>
+        tx.type === "expense" &&
+        tx.categoryId === budget.categoryId &&
+        dayjs(tx.date).isBetween(start, end, null, "[]")
+    )
+    .reduce(
+      (sum, tx) =>
+        sum +
+        (tx.currency === mainCurrency
+          ? Number(tx.amount)
+          : (Number(tx.amount) * (exchangeRates[mainCurrency] || 1) / (exchangeRates[tx.currency] || 1))
+        ),
+      0
+    );
+}
+
 export default function DashboardPage() {
   const { accounts, transactions, budgets, categories, settings, exchangeRates } = useFinanceStore();
   const toast = useToastStore((s) => s.addToast);
@@ -76,16 +98,9 @@ export default function DashboardPage() {
   });
 
   // 計算每項預算的已用金額
-  const budgetsWithUsed = budgetsThisPeriod.map(b => {
-    const used = transactions
-      .filter(
-        tx =>
-          tx.type === "expense" &&
-          tx.categoryId === b.categoryId &&
-          dayjs(tx.date).isBetween(periodStart, periodEnd, null, "[]")
-      )
-      .reduce((sum, tx) => sum + Number(tx.amount), 0);
-    return { ...b, used };
+  const budgetsWithUsed = budgetsThisPeriod.map(budget => {
+    const used = getBudgetExpense(budget, transactions, defaultCurrency, exchangeRates);
+    return { ...budget, used };
   });
 
   // 總預算與總已用
@@ -143,13 +158,13 @@ export default function DashboardPage() {
     expenseByCategory[cat.name].sum += Number(tx.amount);
   });
 
-  // ========== 超級強化財務健康指數計算 ==========
+  // ===== 超級強化財務健康指數 =====
   // 1. 預算執行率（30分）
   const budgetScore = (() => {
     if (budgetTotal === 0) return 30; // 無預算視為滿分
     const ratio = budgetsUsed / budgetTotal;
-    if (ratio <= 1) return 30 - Math.round((ratio - 0.7) * 30); // 0.7~1之間遞減
-    return Math.max(10, 30 - (ratio - 1) * 60); // 超支嚴重扣分
+    if (ratio <= 1) return 30 - Math.round((ratio - 0.7) * 30);
+    return Math.max(10, 30 - (ratio - 1) * 60);
   })();
 
   // 2. 儲蓄率（20分）
@@ -157,7 +172,6 @@ export default function DashboardPage() {
   const savingsScore = Math.max(0, Math.min(20, Math.round(savingsRate * 20)));
 
   // 3. 資產增長（15分）
-  // 假設上月資產 = 本月資產 - 淨收入
   const lastMonthAssets = totalAssets - (monthIncome - monthExpense);
   const assetGrowth = (totalAssets - lastMonthAssets) / (lastMonthAssets || 1);
   const assetScore = assetGrowth >= 0 ? Math.min(15, Math.round(assetGrowth * 30)) : 0;
