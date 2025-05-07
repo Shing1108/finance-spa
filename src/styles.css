@@ -2,6 +2,7 @@
 
 /* 全局變量 */
 :root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
     /* 顏色系統 */
     --primary-color: #3498db;
     --primary-dark: #2980b9;
@@ -76,10 +77,6 @@
     --tabs-height: 45px;
     --header-area-height: 120px; /* 包含頂部信息區域 */
     --bottom-bar-height: 40px; /* 減少底部欄高度 */
-
-    --finances-snapshot-height: 90px;     /* 依你設計實際高度微調，含 padding */
-  --nav-tabs-height: 45px;              /* 與 .top-navigation 的 height 一致 */
-  --header-area-height: calc(var(--finances-snapshot-height) + var(--nav-tabs-height));
 }
 
 /* 深色模式變量 */
@@ -155,6 +152,7 @@ body {
     transition: background-color var(--transition-normal), color var(--transition-normal);
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    padding-top: var(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     position: relative;
 }
@@ -191,11 +189,11 @@ button, input, select, textarea {
 .main-content {
     flex: 1;
     overflow-y: auto;
-    margin-top: var(--header-area-height); 
     padding: var(--spacing-md);
     transition: padding var(--transition-normal);
     -webkit-overflow-scrolling: touch;
     padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height));
+    margin-top: var(--header-area-height); /* 為固定的頂部區域留出空間 */
 }
 
 .top-area {
@@ -205,6 +203,7 @@ button, input, select, textarea {
     right: 0;
     background-color: var(--bg-color);
     z-index: var(--z-index-fixed-nav);
+    padding-top: var(safe-area-inset-top, 0px);
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -213,16 +212,18 @@ button, input, select, textarea {
 }
 
 .top-navigation {
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+    width: 100%;
+    height: var(--tabs-height);
     position: fixed;
-    top: calc(var(--finances-snapshot-height) + env(safe-area-inset-top, 0px));
+    top: 90px; /* 假設快照高度 50px */
     left: 0;
     right: 0;
-    height: var(--nav-tabs-height);
     z-index: 1100;
-    background: var(--card-bg);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
 }
-  
 
 .nav-tabs {
     display: flex;
@@ -438,7 +439,6 @@ button, input, select, textarea {
     transform: none;
     box-shadow: none;
     margin: 5px;
- 
 }
 
 .btn-primary {
@@ -510,7 +510,7 @@ button, input, select, textarea {
     transition: opacity var(--transition-normal);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding:0 0 env(safe-area-inset-bottom, 0px) 0;
+    padding: var(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;
 }
 
 
@@ -703,7 +703,7 @@ button, input, select, textarea {
     align-items: center;
     justify-content: center;
     transition: opacity var(--transition-normal);
-    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
+    padding: var(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;
 }
 
 .spinner {
@@ -724,28 +724,30 @@ button, input, select, textarea {
 
 .fixed-top-bg {
     position: fixed;
-    top: 0;
+    top: var(safe-area-inset-top, 0px);
     left: 0;
     right: 0;
     height: 155px; /* 快照+導航欄總高度 */
     z-index: 900; /* 在快照和導航下方 */
-    background: transparent;
+    background: var(--bg-color);
     pointer-events: none;
   }
 
-  .finances-snapshot {
+.finances-snapshot {
+    display: flex;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1000;
-    padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top, 0px));  /* ← 關鍵 */
-    padding-bottom: var(--spacing-sm);
-    height: var(--finances-snapshot-height);
-    min-height: var(--finances-snapshot-height);
-    display: flex;
-    align-items: center;
-    background: var(--bg-color);
+    gap: var(--spacing-sm);
+    padding: calc(var(--spacing-sm) + var(safe-area-inset-top, 0px)) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    overflow-x: auto; /* 允許在極窄屏幕上滾動 */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
 }
 
 .finances-snapshot::-webkit-scrollbar {
@@ -2193,10 +2195,8 @@ button, input, select, textarea {
 
 @media (max-width: 768px) {
     :root {
-        --finances-snapshot-height: 64px;
-        --nav-tabs-height: 40px;
-        --header-area-height: calc(var(--finances-snapshot-height) + var(--nav-tabs-height));
-      }
+        --header-area-height: 110px; /* 減小移動設備上的頂部區域高度 */
+    }
     
     .finances-snapshot {
         width: 100%;
@@ -2212,6 +2212,7 @@ button, input, select, textarea {
     .main-content {
         padding: var(--spacing-sm);
         padding-bottom: 80px;
+        padding-top: 150px;
     }
     
     .card-header {
@@ -2489,7 +2490,7 @@ button, input, select, textarea {
     .main-content {
         overflow: visible;
         padding: 0;
-        margin-top: var(--header-area-height); 
+        margin-top: calc(var(--header-area-height) + var(safe-area-inset-top, 0px));
     }
     
     .card {
