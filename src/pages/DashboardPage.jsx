@@ -30,7 +30,7 @@ const WIDGETS = [
   { key: "ai", label: "AI 智能分析" },
 ];
 
-// 跨年安全的預算週期計算函式
+// 計算預算週期（支援跨年）
 function getBudgetPeriod(today, resetDay = 1) {
   if (today.date() >= resetDay) {
     // 本月 resetDay ~ 下月 resetDay-1
@@ -62,45 +62,40 @@ export default function DashboardPage() {
     localStorage.setItem("widgets", JSON.stringify(widgets));
   }, [widgets]);
 
-  // 取本月預算（支援自訂 resetDay，並正確處理跨年）
+  // 取本月預算週期設定
   const currentMonthBudgets = budgets.filter(b => b.year === currentYear && b.month === currentMonth);
   const previewMonthBudgets = budgets.filter(b => dayjs(`${b.year}-${b.month}-01`) > today);
   const sampleBudget = currentMonthBudgets[0] || previewMonthBudgets[0];
-
-  // 取得預算重設日（全平台建議只用一個 resetDay，若多預算可讓用戶自訂）
   const resetDay = sampleBudget?.resetDay || 1;
-
-  // 計算本期預算週期（起訖日），自動跨年
   const { periodStart, periodEnd } = getBudgetPeriod(today, resetDay);
 
-  // 找出本期所有預算（以起始日為依據，假設同一 resetDay ）
+  // 本期所有預算（以起始日為依據）
   const budgetsThisPeriod = budgets.filter(b => {
     const thisBudgetStart = dayjs(`${b.year}-${String(b.month).padStart(2, "0")}-${String(b.resetDay || 1).padStart(2, "0")}`);
     return thisBudgetStart.isSame(periodStart, "day");
   });
 
-  // 本期預算總額
-  const budgetTotal = budgetsThisPeriod.reduce((sum, b) => sum + Number(b.amount), 0);
-
-  // 本期已用預算
-  const budgetsUsed = budgetsThisPeriod.reduce((sum, b) => {
-    const expense = transactions
+  // 計算每項預算的已用金額
+  const budgetsWithUsed = budgetsThisPeriod.map(b => {
+    const used = transactions
       .filter(
         tx =>
           tx.type === "expense" &&
           tx.categoryId === b.categoryId &&
           dayjs(tx.date).isBetween(periodStart, periodEnd, null, "[]")
       )
-      .reduce((s, tx) => s + Number(tx.amount), 0);
-    return sum + expense;
-  }, 0);
+      .reduce((sum, tx) => sum + Number(tx.amount), 0);
+    return { ...b, used };
+  });
 
-  // 剩餘預算、剩餘天數、每日可用
+  // 總預算與總已用
+  const budgetTotal = budgetsWithUsed.reduce((sum, b) => sum + Number(b.amount), 0);
+  const budgetsUsed = budgetsWithUsed.reduce((sum, b) => sum + Number(b.used), 0);
   const remainingBudget = budgetTotal - budgetsUsed;
   const daysLeft = periodEnd.diff(today, "day") + 1;
   const dailyBudget = daysLeft > 0 ? remainingBudget / daysLeft : 0;
 
-  // 今日交易（依建立時間倒序最多3筆）
+  // 今日交易
   const todayTx = useMemo(() =>
     transactions
       .filter(tx => dayjs(tx.date).isSame(today, "day"))
@@ -108,28 +103,26 @@ export default function DashboardPage() {
       .slice(0, 3)
     , [transactions, today]);
 
-  // 財務健康指數（簡化評分）
+  // 財務基本數據
   const monthIncome = transactions.filter(
     tx => tx.type === "income" && dayjs(tx.date).month() + 1 === currentMonth && dayjs(tx.date).year() === currentYear
   ).reduce((s, tx) => s + Number(tx.amount), 0);
   const monthExpense = transactions.filter(
     tx => tx.type === "expense" && dayjs(tx.date).month() + 1 === currentMonth && dayjs(tx.date).year() === currentYear
   ).reduce((s, tx) => s + Number(tx.amount), 0);
-  const savingsRate = monthIncome > 0 ? ((monthIncome - monthExpense) / monthIncome) : 0;
-  const budgetPerformance = budgetTotal > 0 ? (budgetsUsed / budgetTotal) : 1;
-  const healthScore = Math.round(
-    Math.max(0, Math.min(1, savingsRate)) * 60 +
-    (1 - Math.abs(1 - budgetPerformance)) * 40
+
+  // 資產計算
+  const totalAssets = accounts.reduce(
+    (sum, acc) =>
+      sum +
+      (acc.currency === defaultCurrency
+        ? Number(acc.balance)
+        : (Number(acc.balance) * (exchangeRates[defaultCurrency] || 1) / (exchangeRates[acc.currency] || 1))
+      ),
+    0
   );
 
-  // 預算提醒
-  useEffect(() => {
-    if (budgetTotal > 0 && budgetsUsed / budgetTotal >= 0.8) {
-      toast("⚠️ 本期預算已達 80%，請注意控管支出", "warning");
-    }
-  }, [budgetTotal, budgetsUsed, toast]);
-
-  // 收支趨勢圖資料
+  // 收支趨勢圖資料（近6月）
   const months = Array.from({ length: 6 }, (_, i) => dayjs().subtract(5 - i, "month").format("YYYY-MM"));
   const trendStats = months.map(m => {
     const txs = transactions.filter(tx => tx.date && tx.date.startsWith(m));
@@ -149,6 +142,57 @@ export default function DashboardPage() {
     if (!expenseByCategory[cat.name]) expenseByCategory[cat.name] = { sum: 0, color: cat.color };
     expenseByCategory[cat.name].sum += Number(tx.amount);
   });
+
+  // ========== 超級強化財務健康指數計算 ==========
+  // 1. 預算執行率（30分）
+  const budgetScore = (() => {
+    if (budgetTotal === 0) return 30; // 無預算視為滿分
+    const ratio = budgetsUsed / budgetTotal;
+    if (ratio <= 1) return 30 - Math.round((ratio - 0.7) * 30); // 0.7~1之間遞減
+    return Math.max(10, 30 - (ratio - 1) * 60); // 超支嚴重扣分
+  })();
+
+  // 2. 儲蓄率（20分）
+  const savingsRate = monthIncome > 0 ? ((monthIncome - monthExpense) / monthIncome) : 0;
+  const savingsScore = Math.max(0, Math.min(20, Math.round(savingsRate * 20)));
+
+  // 3. 資產增長（15分）
+  // 假設上月資產 = 本月資產 - 淨收入
+  const lastMonthAssets = totalAssets - (monthIncome - monthExpense);
+  const assetGrowth = (totalAssets - lastMonthAssets) / (lastMonthAssets || 1);
+  const assetScore = assetGrowth >= 0 ? Math.min(15, Math.round(assetGrowth * 30)) : 0;
+
+  // 4. 現金流穩定度（15分）
+  const positiveMonths = trendStats.filter(t => t.balance >= 0).length;
+  const cashFlowScore = Math.round((positiveMonths / trendStats.length) * 15);
+
+  // 5. 超支警示（10分）
+  const overBudgetCount = budgetsWithUsed.filter(b => b.used > b.amount).length;
+  const overBudgetScore = overBudgetCount === 0 ? 10 : Math.max(0, 10 - overBudgetCount * 3);
+
+  // 6. 支出異常（10分）
+  let warningScore = 10;
+  for (const cat of categories) {
+    const sums = months.slice(0, -1).map(m =>
+      transactions.filter(tx => tx.type === "expense" && tx.categoryId === cat.id && tx.date.startsWith(m))
+        .reduce((sum, tx) => sum + Number(tx.amount), 0)
+    );
+    const avg = sums.reduce((a, b) => a + b, 0) / (sums.length || 1);
+    const thisMonth = monthExpenseTx.filter(tx => tx.categoryId === cat.id).reduce((a, b) => a + Number(b.amount), 0);
+    if (avg > 0 && thisMonth > avg * 1.5) warningScore -= 3;
+  }
+  warningScore = Math.max(0, warningScore);
+
+  const healthScore = Math.max(0, Math.min(100, Math.round(
+    budgetScore + savingsScore + assetScore + cashFlowScore + overBudgetScore + warningScore
+  )));
+
+  // 預算提醒
+  useEffect(() => {
+    if (budgetTotal > 0 && budgetsUsed / budgetTotal >= 0.8) {
+      toast("⚠️ 本期預算已達 80%，請注意控管支出", "warning");
+    }
+  }, [budgetTotal, budgetsUsed, toast]);
 
   return (
     <div>
@@ -174,6 +218,37 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* 預算狀態（每一項預算細節） */}
+      {widgets.budget && (
+        <div className="card">
+          <div className="card-header">預算狀態</div>
+          <div className="card-body">
+            {budgetsWithUsed.length === 0 ? (
+              <div className="empty-message">尚未設定預算</div>
+            ) : (
+              <div>
+                {budgetsWithUsed.map(b =>
+                  <div key={b.id} style={{marginBottom:8}}>
+                    <b>{categories.find(c=>c.id===b.categoryId)?.name || "未分類"}</b>
+                    ：{formatCurrency(b.used, defaultCurrency)} / {formatCurrency(b.amount, defaultCurrency)}
+                    （{Math.round((b.used / b.amount) * 100)}%）
+                    {b.used > b.amount && <span style={{color:"#e74c3c"}}>（超支！）</span>}
+                  </div>
+                )}
+                <div style={{ background: "#e0e7ef", borderRadius: 6, height: 10, overflow: "hidden", margin: "10px 0" }}>
+                  <div style={{
+                    width: Math.min(100, Math.floor((budgetsUsed / budgetTotal) * 100)) + '%',
+                    height: "100%",
+                    background: budgetsUsed / budgetTotal >= 0.8 ? "#e74c3c" : "#3498db"
+                  }}></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 今日交易 */}
       {widgets.today && (
         <div className="card">
@@ -199,47 +274,31 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 預算狀態 */}
-      {widgets.budget && (
-        <div className="card">
-          <div className="card-header">預算狀態</div>
-          <div className="card-body">
-            {budgetTotal === 0 ? (
-              <div className="empty-message">尚未設定預算</div>
-            ) : (
-              <div>
-                <div>本期預算：{formatCurrency(budgetTotal, defaultCurrency)}</div>
-                <div>已用：{formatCurrency(budgetsUsed, defaultCurrency)}</div>
-                <div>剩餘：{formatCurrency(remainingBudget, defaultCurrency)}</div>
-                <div style={{ background: "#e0e7ef", borderRadius: 6, height: 10, overflow: "hidden", margin: "6px 0" }}>
-                  <div style={{
-                    width: Math.min(100, Math.floor((budgetsUsed / budgetTotal) * 100)) + '%',
-                    height: "100%",
-                    background: budgetsUsed / budgetTotal >= 0.8 ? "#e74c3c" : "#3498db"
-                  }}></div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 財務健康指數 */}
+      {/* 超級強化財務健康指數 */}
       {widgets.health && (
         <div className="card">
-          <div className="card-header">財務健康指數</div>
+          <div className="card-header">超級財務健康指數</div>
           <div className="card-body">
-            <div style={{ fontSize: 38, fontWeight: "bold", color: "#2563eb" }}>{healthScore}%</div>
-            <div style={{ fontSize: 15 }}>
-              {healthScore >= 85 && "優秀！持續保持良好儲蓄與資產配置。"}
-              {healthScore >= 70 && healthScore < 85 && "良好，持續優化支出與儲蓄。"}
-              {healthScore >= 50 && healthScore < 70 && "普通，建議檢視支出，增加儲蓄。"}
-              {healthScore < 50 && "請加強支出控制與儲蓄，避免財務風險。"}
+            <div style={{ fontSize: 40, fontWeight: "bold", color: "#2563eb" }}>{healthScore}分</div>
+            <ul style={{ fontSize: 15 }}>
+              <li>預算執行率：{Math.round(budgetScore)}/30</li>
+              <li>儲蓄率：{Math.round(savingsScore)}/20</li>
+              <li>資產增長：{Math.round(assetScore)}/15</li>
+              <li>現金流穩定度：{Math.round(cashFlowScore)}/15</li>
+              <li>超支警示：{Math.round(overBudgetScore)}/10</li>
+              <li>支出異常：{Math.round(warningScore)}/10</li>
+            </ul>
+            <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
+              指數依據多個財務維度綜合計算（預算、儲蓄、資產、現金流、異常），分數越高代表財務越健康。
             </div>
-            <div style={{ marginTop: 10, color: "#888", fontSize: 13 }}>
-              <b>計算方式：</b><br />
-              儲蓄率(60%) + 預算執行率(40%)<br />
-              儲蓄率 = (本月收入-支出)/收入；預算執行率 = 1-abs(本月已用/預算-1)
+            <div style={{ color: "#888", fontSize: 14, marginTop: 4 }}>
+              <b>
+                {healthScore >= 90 && "極健康，財務極強壯！"}
+                {healthScore >= 70 && healthScore < 90 && "健康良好，繼續保持！"}
+                {healthScore >= 50 && healthScore < 70 && "普通，建議檢討支出與儲蓄。"}
+                {healthScore >= 30 && healthScore < 50 && "偏弱，注意預算與現金流。"}
+                {healthScore < 30 && "高風險，需加強財務管理！"}
+              </b>
             </div>
           </div>
         </div>
