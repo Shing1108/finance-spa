@@ -144,8 +144,11 @@ export const useFinanceStore = create(
         savingsGoals: [],
         recurringItems: [],
         noteSuggestions: {}
-      }))
+      })),
+      setAll: (data) => set(() => ({ ...data })),
+
     }),
+    
     {
       name: "finance-store-v2", // localStorage key
     }
