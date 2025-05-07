@@ -331,22 +331,38 @@ export default function TransactionsPage() {
               autoComplete="off"
               placeholder="可輸入新備註，或點下方快速選擇"
             />
-            {currentNoteSuggestions.length > 0 && (
-              <div className="quick-note-buttons">
-                {currentNoteSuggestions.map((sug, idx) => (
-                  <button
-                    type="button"
-                    className="quick-note-btn"
-                    key={idx}
-                    onClick={() =>
-                      setForm((f) => ({ ...f, note: sug }))
-                    }
-                  >
-                    {sug}
-                  </button>
-                ))}
-              </div>
-            )}
+{currentNoteSuggestions.length > 0 && (
+  <div className="quick-note-buttons">
+    {currentNoteSuggestions.map((sug, idx) => (
+      <span key={idx} style={{ display: "inline-flex", alignItems: "center" }}>
+        <button
+          type="button"
+          className="quick-note-btn"
+          onClick={() =>
+            setForm((f) => ({ ...f, note: sug }))
+          }
+        >
+          {sug}
+        </button>
+        <button
+          type="button"
+          style={{
+            marginLeft: 4,
+            background: "none",
+            border: "none",
+            color: "#e74c3c",
+            cursor: "pointer",
+            fontSize: 14
+          }}
+          title="刪除這個建議"
+          onClick={() => deleteNoteSuggestion(form.categoryId, sug)}
+        >
+          <i className="fas fa-times"></i>
+        </button>
+      </span>
+    ))}
+  </div>
+)}
           </div>
           <button type="submit" className="btn btn-primary">
             新增
@@ -586,20 +602,6 @@ export default function TransactionsPage() {
                     account={acc}
                     onClick={() => setPreviewTx(tx)}
                   />
-                  <button
-                    className="btn btn-danger btn-sm"
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 10,
-                      zIndex: 2,
-                      fontSize: 12,
-                      padding: "3px 14px",
-                    }}
-                    onClick={() => handleDeleteTx(tx)}
-                  >
-                    刪除
-                  </button>
                 </div>
               );
             })

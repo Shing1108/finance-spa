@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Account } from "../models/Account";
-import { Category } from "../models/Category";
-import { Transaction } from "../models/Transaction";
-import { Budget } from "../models/Budget";
-import { SavingsGoal } from "../models/SavingsGoal";
-import { RecurringItem } from "../models/RecurringItem";
+import { Account } from "./Account";
+import { Category } from "./Category";
+import { Transaction } from "./Transaction";
+import { Budget } from "./Budget";
+import { SavingsGoal } from "./SavingsGoal";
+import { RecurringItem } from "./RecurringItem";
 
 const defaultSettings = {
   darkMode: false,
@@ -16,6 +16,32 @@ const defaultSettings = {
   enableBudgetAlerts: true,
   alertThreshold: 80
 };
+
+// ========== 核心：重算所有帳戶餘額 ==========
+function recalculateAllAccountBalances(accounts, transactions) {
+  // 如果未來有 initialBalance 欄位，可改成：
+  // const newAccounts = accounts.map(acc => ({ ...acc, balance: acc.initialBalance ?? 0 }));
+  // 目前預設為 0
+  const newAccounts = accounts.map(acc => ({ ...acc, balance: 0 }));
+
+  transactions.forEach(tx => {
+    if (tx.type === "income" && tx.accountId) {
+      const acc = newAccounts.find(a => a.id === tx.accountId);
+      if (acc) acc.balance += Number(tx.amount);
+    }
+    if (tx.type === "expense" && tx.accountId) {
+      const acc = newAccounts.find(a => a.id === tx.accountId);
+      if (acc) acc.balance -= Number(tx.amount);
+    }
+    if (tx.type === "transfer" && tx.accountId && tx.toAccountId) {
+      const fromAcc = newAccounts.find(a => a.id === tx.accountId);
+      const toAcc = newAccounts.find(a => a.id === tx.toAccountId);
+      if (fromAcc) fromAcc.balance -= Number(tx.amount);
+      if (toAcc) toAcc.balance += Number(tx.amount);
+    }
+  });
+  return newAccounts;
+}
 
 export const useFinanceStore = create(
   persist(
@@ -29,13 +55,6 @@ export const useFinanceStore = create(
       savingsGoals: [],
       recurringItems: [],
       noteSuggestions: {},
-      exchangeRates: {}, // 例如: { USD: 7.85, JPY: 0.056, ... }
-      lastRatesUpdate: null,
-      setAll: (data) => set(data),
-      
-      setExchangeRates: (rates) =>
-        set({ exchangeRates: rates, lastRatesUpdate: Date.now() }),
-      
       // Actions
       setSettings: (s) => set({ settings: { ...get().settings, ...s } }),
       addAccount: (data) => set((s) => ({ accounts: [...s.accounts, new Account(data)] })),
@@ -54,46 +73,24 @@ export const useFinanceStore = create(
       deleteCategory: (id) => set((s) => ({
         categories: s.categories.filter(cat => cat.id !== id)
       })),
+
+      // ===== 交易相關（重點修正）=====
       addTransaction: (data) => set((s) => {
-        const tx = new Transaction(data);
-        let newAccounts = s.accounts.slice();
-        if (tx.type === "income" && tx.accountId) {
-          newAccounts = newAccounts.map(acc =>
-            acc.id === tx.accountId
-              ? { ...acc, balance: Number(acc.balance) + Number(tx.amount) }
-              : acc
-          );
-        }
-        if (tx.type === "expense" && tx.accountId) {
-          newAccounts = newAccounts.map(acc =>
-            acc.id === tx.accountId
-              ? { ...acc, balance: Number(acc.balance) - Number(tx.amount) }
-              : acc
-          );
-        }
-        if (tx.type === "transfer" && tx.accountId && tx.toAccountId) {
-          newAccounts = newAccounts.map(acc => {
-            if (acc.id === tx.accountId) {
-              return { ...acc, balance: Number(acc.balance) - Number(tx.amount) };
-            }
-            if (acc.id === tx.toAccountId) {
-              return { ...acc, balance: Number(acc.balance) + Number(tx.amount) };
-            }
-            return acc;
-          });
-        }
-        return {
-          transactions: [...s.transactions, tx],
-          accounts: newAccounts,
-        };
+        const txs = [...s.transactions, new Transaction(data)];
+        const newAccounts = recalculateAllAccountBalances(s.accounts, txs);
+        return { transactions: txs, accounts: newAccounts };
       }),
-      updateTransaction: (id, data) =>
-        set((s) => ({
-          transactions: s.transactions.map(tx => tx.id === id ? { ...tx, ...data, updatedAt: new Date().toISOString() } : tx)
-        })),
-      deleteTransaction: (id) => set((s) => ({
-        transactions: s.transactions.filter(tx => tx.id !== id)
-      })),
+      updateTransaction: (id, data) => set((s) => {
+        const txs = s.transactions.map(tx => tx.id === id ? { ...tx, ...data, updatedAt: new Date().toISOString() } : tx);
+        const newAccounts = recalculateAllAccountBalances(s.accounts, txs);
+        return { transactions: txs, accounts: newAccounts };
+      }),
+      deleteTransaction: (id) => set((s) => {
+        const txs = s.transactions.filter(tx => tx.id !== id);
+        const newAccounts = recalculateAllAccountBalances(s.accounts, txs);
+        return { transactions: txs, accounts: newAccounts };
+      }),
+
       addBudget: (data) => set((s) => ({ budgets: [...s.budgets, new Budget(data)] })),
       updateBudget: (id, data) =>
         set((s) => ({
@@ -128,23 +125,26 @@ export const useFinanceStore = create(
             noteSuggestions: { ...s.noteSuggestions, [categoryId]: newNotes }
           };
         }),
-        clearAllData: () => {
-          // 1. 清空狀態
-          set({
-            settings: defaultSettings,
-            accounts: [],
-            categories: [],
-            transactions: [],
-            budgets: [],
-            savingsGoals: [],
-            recurringItems: [],
-            noteSuggestions: {},
-            exchangeRates: {},
-            lastRatesUpdate: null,
-          });
-          // 2. 清除 localStorage
-          localStorage.removeItem("finance-store-v2");
-        },
+      deleteNoteSuggestion: (categoryId, note) =>
+        set((s) => {
+          const notes = s.noteSuggestions[categoryId] || [];
+          if (!note || !notes.includes(note)) return {};
+          const newNotes = notes.filter(n => n !== note);
+          return {
+            noteSuggestions: { ...s.noteSuggestions, [categoryId]: newNotes }
+          };
+        }),
+      // 你可以加 clearAllData 等其他 action
+      clearAllData: () => set(() => ({
+        settings: defaultSettings,
+        accounts: [],
+        categories: [],
+        transactions: [],
+        budgets: [],
+        savingsGoals: [],
+        recurringItems: [],
+        noteSuggestions: {}
+      }))
     }),
     {
       name: "finance-store-v2", // localStorage key
