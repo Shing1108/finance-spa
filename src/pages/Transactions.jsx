@@ -12,6 +12,7 @@ export default function TransactionsPage() {
     accounts,
     addTransaction,
     updateTransaction,
+    deleteTransaction,
     addNoteSuggestion,
     noteSuggestions,
   } = useFinanceStore();
@@ -49,7 +50,8 @@ export default function TransactionsPage() {
   useEffect(() => {
     if (
       filteredCategories.length > 0 &&
-      !filteredCategories.find((c) => c.id === form.categoryId)
+      !filteredCategories.find((c) => c.id === form.categoryId) &&
+      form.type !== "transfer"
     ) {
       setForm((f) => ({ ...f, categoryId: filteredCategories[0].id }));
     }
@@ -72,19 +74,21 @@ export default function TransactionsPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.amount || !form.accountId) return;
-    if (form.type === "transfer" && (!form.toAccountId || form.toAccountId === form.accountId)) {
-      alert("請選擇不同的轉出與轉入戶口");
-      return;
+    if (form.type === "transfer") {
+      if (!form.toAccountId || form.toAccountId === form.accountId) {
+        alert("請選擇不同的轉出與轉入戶口");
+        return;
+      }
     }
     addTransaction({
       ...form,
       amount: parseFloat(form.amount),
       createdAt: new Date().toISOString(),
       id: Math.random().toString(36).slice(2),
-      // transfer: categoryId 可留空
       categoryId: form.type === "transfer" ? "" : form.categoryId,
     });
-    if (form.note && form.categoryId && form.type !== "transfer") addNoteSuggestion(form.categoryId, form.note);
+    if (form.note && form.categoryId && form.type !== "transfer")
+      addNoteSuggestion(form.categoryId, form.note);
     setForm((f) => ({ ...f, amount: "", note: "" }));
   };
 
@@ -100,12 +104,28 @@ export default function TransactionsPage() {
   const handleEditSubmit = (e) => {
     e.preventDefault();
     if (!editTx) return;
+    if (editTx.type === "transfer") {
+      if (!editTx.accountId || !editTx.toAccountId || editTx.accountId === editTx.toAccountId) {
+        alert("請選擇不同的轉出與轉入戶口");
+        return;
+      }
+    }
     updateTransaction(editTx.id, {
       ...editTx,
       amount: parseFloat(editTx.amount),
+      categoryId: editTx.type === "transfer" ? "" : editTx.categoryId,
     });
     setEditTx(null);
   };
+
+  // 刪除交易
+  function handleDeleteTx(tx) {
+    if (window.confirm("確定要刪除此交易？")) {
+      deleteTransaction(tx.id);
+      setPreviewTx(null);
+      setEditTx(null);
+    }
+  }
 
   // 搜尋條件重設
   const handleResetSearch = () => {
@@ -185,201 +205,201 @@ export default function TransactionsPage() {
       <div className="card-body">
         {/* 新增表單 */}
         <form onSubmit={handleSubmit} style={{ marginBottom: 12 }}>
-  <div className="form-group">
-    <label>類型</label>
-    <select
-      name="type"
-      className="form-control"
-      value={form.type}
-      onChange={handleFormChange}
-      required
-    >
-      <option value="income">收入</option>
-      <option value="expense">支出</option>
-      <option value="transfer">轉賬</option>
-    </select>
-  </div>
-  <div className="form-group">
-    <label>日期</label>
-    <input
-      type="date"
-      name="date"
-      className="form-control"
-      value={form.date}
-      onChange={handleFormChange}
-      required
-    />
-  </div>
-  {form.type === "transfer" ? (
-    <>
-      <div className="form-group">
-        <label>轉出戶口</label>
-        <select
-          name="accountId"
-          className="form-control"
-          value={form.accountId}
-          onChange={handleFormChange}
-          required
-        >
-          <option value="">選擇戶口</option>
-          {accounts.map((acc) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.name}（{acc.currency}）
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>轉入戶口</label>
-        <select
-          name="toAccountId"
-          className="form-control"
-          value={form.toAccountId || ""}
-          onChange={handleFormChange}
-          required
-        >
-          <option value="">選擇戶口</option>
-          {accounts
-            .filter((acc) => acc.id !== form.accountId)
-            .map((acc) => (
-              <option key={acc.id} value={acc.id}>
-                {acc.name}（{acc.currency}）
-              </option>
-            ))}
-        </select>
-      </div>
-    </>
-  ) : (
-    <div className="form-group">
-      <label>戶口</label>
-      <select
-        name="accountId"
-        className="form-control"
-        value={form.accountId}
-        onChange={handleFormChange}
-        required
-      >
-        {accounts.map((acc) => (
-          <option key={acc.id} value={acc.id}>
-            {acc.name}（{acc.currency}）
-          </option>
-        ))}
-      </select>
-    </div>
-  )}
+          <div className="form-group">
+            <label>類型</label>
+            <select
+              name="type"
+              className="form-control"
+              value={form.type}
+              onChange={handleFormChange}
+              required
+            >
+              <option value="income">收入</option>
+              <option value="expense">支出</option>
+              <option value="transfer">轉賬</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>日期</label>
+            <input
+              type="date"
+              name="date"
+              className="form-control"
+              value={form.date}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          {form.type === "transfer" ? (
+            <>
+              <div className="form-group">
+                <label>轉出戶口</label>
+                <select
+                  name="accountId"
+                  className="form-control"
+                  value={form.accountId}
+                  onChange={handleFormChange}
+                  required
+                >
+                  <option value="">選擇戶口</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name}（{acc.currency}）
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>轉入戶口</label>
+                <select
+                  name="toAccountId"
+                  className="form-control"
+                  value={form.toAccountId || ""}
+                  onChange={handleFormChange}
+                  required
+                >
+                  <option value="">選擇戶口</option>
+                  {accounts
+                    .filter((acc) => acc.id !== form.accountId)
+                    .map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name}（{acc.currency}）
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <div className="form-group">
+              <label>戶口</label>
+              <select
+                name="accountId"
+                className="form-control"
+                value={form.accountId}
+                onChange={handleFormChange}
+                required
+              >
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name}（{acc.currency}）
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-  {/* 只有非轉賬時才顯示分類 */}
-  {form.type !== "transfer" && (
-    <div className="form-group">
-      <label>分類</label>
-      <select
-        name="categoryId"
-        className="form-control"
-        value={form.categoryId}
-        onChange={handleFormChange}
-        required
-      >
-        {filteredCategories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
-    </div>
-  )}
+          {/* 只有非轉賬時才顯示分類 */}
+          {form.type !== "transfer" && (
+            <div className="form-group">
+              <label>分類</label>
+              <select
+                name="categoryId"
+                className="form-control"
+                value={form.categoryId}
+                onChange={handleFormChange}
+                required
+              >
+                {filteredCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-  <div className="form-group">
-    <label>金額</label>
-    <input
-      type="number"
-      name="amount"
-      className="form-control"
-      value={form.amount}
-      onChange={handleFormChange}
-      required
-      min="0"
-      step="0.01"
-    />
-  </div>
-  <div className="form-group">
-    <label>備註</label>
-    <input
-      name="note"
-      className="form-control"
-      value={form.note}
-      onChange={handleFormChange}
-      autoComplete="off"
-      placeholder="可輸入新備註，或點下方快速選擇"
-    />
-    {currentNoteSuggestions.length > 0 && (
-      <div className="quick-note-buttons">
-        {currentNoteSuggestions.map((sug, idx) => (
-          <button
-            type="button"
-            className="quick-note-btn"
-            key={idx}
-            onClick={() =>
-              setForm((f) => ({ ...f, note: sug }))
-            }
-          >
-            {sug}
+          <div className="form-group">
+            <label>金額</label>
+            <input
+              type="number"
+              name="amount"
+              className="form-control"
+              value={form.amount}
+              onChange={handleFormChange}
+              required
+              min="0"
+              step="0.01"
+            />
+          </div>
+          <div className="form-group">
+            <label>備註</label>
+            <input
+              name="note"
+              className="form-control"
+              value={form.note}
+              onChange={handleFormChange}
+              autoComplete="off"
+              placeholder="可輸入新備註，或點下方快速選擇"
+            />
+            {currentNoteSuggestions.length > 0 && (
+              <div className="quick-note-buttons">
+                {currentNoteSuggestions.map((sug, idx) => (
+                  <button
+                    type="button"
+                    className="quick-note-btn"
+                    key={idx}
+                    onClick={() =>
+                      setForm((f) => ({ ...f, note: sug }))
+                    }
+                  >
+                    {sug}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button type="submit" className="btn btn-primary">
+            新增
           </button>
-        ))}
-      </div>
-    )}
-  </div>
-  <button type="submit" className="btn btn-primary">
-    新增
-  </button>
-</form>
-        <br></br><br></br>
+        </form>
+        <br /><br />
         <h3 className="mb-2">交易記錄</h3>
-        <br></br>
+        <br />
         <hr className="my-6" />
-        <br></br>
+        <br />
 
         <div className="search-bar">
-  <div className="search-item">
-    <select value={searchType} onChange={e => setSearchType(e.target.value)} placeholder="類型">
-      <option value="">全部類型</option>
-      <option value="income">收入</option>
-      <option value="expense">支出</option>
-      <option value="transfer">轉賬</option>
-    </select>
-  </div>
-  <div className="search-item">
-    <select value={searchCategory} onChange={e => setSearchCategory(e.target.value)} placeholder="分類">
-      <option value="">全部分類</option>
-      {categories.map(cat => (
-        <option key={cat.id} value={cat.id}>{cat.name}</option>
-      ))}
-    </select>
-  </div>
-  <div className="search-item">
-    <select value={searchAccount} onChange={e => setSearchAccount(e.target.value)} placeholder="戶口">
-      <option value="">全部戶口</option>
-      {accounts.map(acc => (
-        <option key={acc.id} value={acc.id}>{acc.name}</option>
-      ))}
-    </select>
-  </div>
-  <div className="search-item">
-    <input type="text" value={searchKeyword} onChange={e => setSearchKeyword(e.target.value)} placeholder="關鍵字" />
-  </div>
-  <div className="search-item">
-    <input type="date" value={searchDateFrom} onChange={e => setSearchDateFrom(e.target.value)} placeholder="開始日期" />
-  </div>
-  <div className="search-item">
-    <input type="date" value={searchDateTo} onChange={e => setSearchDateTo(e.target.value)} placeholder="結束日期" />
-  </div>
-  <div className="search-item">
-    <input type="number" value={searchAmountMin} onChange={e => setSearchAmountMin(e.target.value)} placeholder="金額下限" min="0" />
-  </div>
-  <div className="search-item">
-    <input type="number" value={searchAmountMax} onChange={e => setSearchAmountMax(e.target.value)} placeholder="金額上限" min="0" />
-  </div>
-  <button type="button" className="reset-btn" onClick={handleResetSearch}>重設</button>
-</div>
+          <div className="search-item">
+            <select value={searchType} onChange={e => setSearchType(e.target.value)} placeholder="類型">
+              <option value="">全部類型</option>
+              <option value="income">收入</option>
+              <option value="expense">支出</option>
+              <option value="transfer">轉賬</option>
+            </select>
+          </div>
+          <div className="search-item">
+            <select value={searchCategory} onChange={e => setSearchCategory(e.target.value)} placeholder="分類">
+              <option value="">全部分類</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="search-item">
+            <select value={searchAccount} onChange={e => setSearchAccount(e.target.value)} placeholder="戶口">
+              <option value="">全部戶口</option>
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>{acc.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="search-item">
+            <input type="text" value={searchKeyword} onChange={e => setSearchKeyword(e.target.value)} placeholder="關鍵字" />
+          </div>
+          <div className="search-item">
+            <input type="date" value={searchDateFrom} onChange={e => setSearchDateFrom(e.target.value)} placeholder="開始日期" />
+          </div>
+          <div className="search-item">
+            <input type="date" value={searchDateTo} onChange={e => setSearchDateTo(e.target.value)} placeholder="結束日期" />
+          </div>
+          <div className="search-item">
+            <input type="number" value={searchAmountMin} onChange={e => setSearchAmountMin(e.target.value)} placeholder="金額下限" min="0" />
+          </div>
+          <div className="search-item">
+            <input type="number" value={searchAmountMax} onChange={e => setSearchAmountMax(e.target.value)} placeholder="金額上限" min="0" />
+          </div>
+          <button type="button" className="reset-btn" onClick={handleResetSearch}>重設</button>
+        </div>
         {/* ====== 搜尋條件表單 End ====== */}
 
         {/* 編輯表單 Modal */}
@@ -415,40 +435,87 @@ export default function TransactionsPage() {
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>分類</label>
-                <select
-                  name="categoryId"
-                  className="form-control"
-                  value={editTx.categoryId}
-                  onChange={handleEditChange}
-                  required
-                >
-                  {categories
-                    .filter((cat) => cat.type === editTx.type)
-                    .map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
+
+              {editTx.type === "transfer" ? (
+                <>
+                  <div className="form-group">
+                    <label>轉出戶口</label>
+                    <select
+                      name="accountId"
+                      className="form-control"
+                      value={editTx.accountId}
+                      onChange={handleEditChange}
+                      required
+                    >
+                      <option value="">選擇戶口</option>
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name}（{acc.currency}）
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>轉入戶口</label>
+                    <select
+                      name="toAccountId"
+                      className="form-control"
+                      value={editTx.toAccountId || ""}
+                      onChange={handleEditChange}
+                      required
+                    >
+                      <option value="">選擇戶口</option>
+                      {accounts
+                        .filter((acc) => acc.id !== editTx.accountId)
+                        .map((acc) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name}（{acc.currency}）
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <div className="form-group">
+                  <label>戶口</label>
+                  <select
+                    name="accountId"
+                    className="form-control"
+                    value={editTx.accountId}
+                    onChange={handleEditChange}
+                    required
+                  >
+                    {accounts.map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name}（{acc.currency}）
                       </option>
                     ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>戶口</label>
-                <select
-                  name="accountId"
-                  className="form-control"
-                  value={editTx.accountId}
-                  onChange={handleEditChange}
-                  required
-                >
-                  {accounts.map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      {acc.name}（{acc.currency}）
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  </select>
+                </div>
+              )}
+
+              {/* 只有非轉賬時才顯示分類 */}
+              {editTx.type !== "transfer" && (
+                <div className="form-group">
+                  <label>分類</label>
+                  <select
+                    name="categoryId"
+                    className="form-control"
+                    value={editTx.categoryId}
+                    onChange={handleEditChange}
+                    required
+                  >
+                    {categories
+                      .filter((cat) => cat.type === editTx.type)
+                      .map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
               <div className="form-group">
                 <label>金額</label>
                 <input
@@ -482,6 +549,13 @@ export default function TransactionsPage() {
                 >
                   取消
                 </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => handleDeleteTx(editTx)}
+                >
+                  刪除
+                </button>
               </div>
             </form>
           )}
@@ -505,13 +579,28 @@ export default function TransactionsPage() {
               const cat = categories.find((c) => c.id === tx.categoryId);
               const acc = accounts?.find((a) => a.id === tx.accountId);
               return (
-                <TransactionCard
-                  key={tx.id}
-                  tx={tx}
-                  category={cat}
-                  account={acc}
-                  onClick={() => setPreviewTx(tx)}
-                />
+                <div key={tx.id} style={{ position: "relative" }}>
+                  <TransactionCard
+                    tx={tx}
+                    category={cat}
+                    account={acc}
+                    onClick={() => setPreviewTx(tx)}
+                  />
+                  <button
+                    className="btn btn-danger btn-sm"
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 10,
+                      zIndex: 2,
+                      fontSize: 12,
+                      padding: "3px 14px",
+                    }}
+                    onClick={() => handleDeleteTx(tx)}
+                  >
+                    刪除
+                  </button>
+                </div>
               );
             })
           )}
