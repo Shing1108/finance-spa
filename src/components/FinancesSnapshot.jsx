@@ -1,7 +1,6 @@
 import { useFinanceStore } from "../store/financeStore";
 import { useDayManagerStore } from "../store/dayManagerStore";
 import { formatCurrency } from "../utils/format";
-import dayjs from "dayjs";
 
 export default function FinancesSnapshot() {
   const { accounts, transactions, settings, exchangeRates } = useFinanceStore();
@@ -19,7 +18,7 @@ export default function FinancesSnapshot() {
   );
 
   // 用 currentDate 做為「今日」基準
-  const todayTx = transactions.filter((tx) => dayjs(tx.date).format("YYYY-MM-DD") === currentDate);
+  const todayTx = transactions.filter(tx => tx.date === currentDate);
   const todayIncome = todayTx.filter(tx => tx.type === "income").reduce((s, tx) => s + Number(tx.amount), 0);
   const todayExpense = todayTx.filter(tx => tx.type === "expense").reduce((s, tx) => s + Number(tx.amount), 0);
 

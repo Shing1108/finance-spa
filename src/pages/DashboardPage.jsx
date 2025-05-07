@@ -4,6 +4,7 @@ import { formatCurrency } from "../utils/format";
 import dayjs from "dayjs";
 import TransactionCard from "../components/TransactionCard";
 import { Line, Doughnut } from "react-chartjs-2";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import {
   Chart as ChartJS,
   LineElement,
@@ -74,6 +75,7 @@ export default function DashboardPage() {
   const today = dayjs();
   const currentMonth = today.month() + 1;
   const currentYear = today.year();
+  const currentDate = useDayManagerStore(s => s.currentDate);
 
   // 儀表板可顯示的小工具
   const [widgets, setWidgets] = useState(
@@ -113,7 +115,7 @@ export default function DashboardPage() {
   // 今日交易
   const todayTx = useMemo(() =>
     transactions
-      .filter(tx => dayjs(tx.date).isSame(today, "day"))
+      .filter(tx => tx.date === currentDate)
       .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
       .slice(0, 3)
     , [transactions, today]);
