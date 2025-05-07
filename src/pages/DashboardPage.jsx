@@ -1,10 +1,10 @@
 import { useFinanceStore } from "../store/financeStore";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import { useEffect, useMemo, useState } from "react";
 import { formatCurrency } from "../utils/format";
 import dayjs from "dayjs";
 import TransactionCard from "../components/TransactionCard";
 import { Line, Doughnut } from "react-chartjs-2";
-import { useDayManagerStore } from "../store/dayManagerStore";
 import {
   Chart as ChartJS,
   LineElement,
@@ -32,14 +32,13 @@ const WIDGETS = [
 ];
 
 // 計算預算週期（支援跨年）
-function getBudgetPeriod(today, resetDay = 1) {
+function getBudgetPeriod(baseDay, resetDay = 1) {
+  const today = dayjs(baseDay);
   if (today.date() >= resetDay) {
-    // 本月 resetDay ~ 下月 resetDay-1
     const periodStart = today.date(resetDay);
     const periodEnd = today.add(1, "month").date(resetDay).subtract(1, "day");
     return { periodStart, periodEnd };
   } else {
-    // 上月 resetDay ~ 本月 resetDay-1
     const periodStart = today.subtract(1, "month").date(resetDay);
     const periodEnd = today.date(resetDay).subtract(1, "day");
     return { periodStart, periodEnd };
@@ -70,12 +69,12 @@ function getBudgetExpense(budget, txList, mainCurrency, exchangeRates) {
 
 export default function DashboardPage() {
   const { accounts, transactions, budgets, categories, settings, exchangeRates } = useFinanceStore();
+  const currentDate = useDayManagerStore(s => s.currentDate); // 關鍵：以 dayManagerStore 為基準
   const toast = useToastStore((s) => s.addToast);
   const defaultCurrency = settings.defaultCurrency || "HKD";
-  const today = dayjs();
+  const today = dayjs(currentDate);
   const currentMonth = today.month() + 1;
   const currentYear = today.year();
-  const currentDate = useDayManagerStore(s => s.currentDate);
 
   // 儀表板可顯示的小工具
   const [widgets, setWidgets] = useState(
@@ -91,7 +90,7 @@ export default function DashboardPage() {
   const previewMonthBudgets = budgets.filter(b => dayjs(`${b.year}-${b.month}-01`) > today);
   const sampleBudget = currentMonthBudgets[0] || previewMonthBudgets[0];
   const resetDay = sampleBudget?.resetDay || 1;
-  const { periodStart, periodEnd } = getBudgetPeriod(today, resetDay);
+  const { periodStart, periodEnd } = getBudgetPeriod(currentDate, resetDay);
 
   // 本期所有預算（以起始日為依據）
   const budgetsThisPeriod = budgets.filter(b => {
@@ -112,15 +111,15 @@ export default function DashboardPage() {
   const daysLeft = periodEnd.diff(today, "day") + 1;
   const dailyBudget = daysLeft > 0 ? remainingBudget / daysLeft : 0;
 
-  // 今日交易
+  // 今日交易（以 currentDate 為基準）
   const todayTx = useMemo(() =>
     transactions
       .filter(tx => tx.date === currentDate)
       .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
       .slice(0, 3)
-    , [transactions, today]);
+    , [transactions, currentDate]);
 
-  // 財務基本數據
+  // 財務基本數據（以 currentDate 所在年月為基準）
   const monthIncome = transactions.filter(
     tx => tx.type === "income" && dayjs(tx.date).month() + 1 === currentMonth && dayjs(tx.date).year() === currentYear
   ).reduce((s, tx) => s + Number(tx.amount), 0);
@@ -139,8 +138,8 @@ export default function DashboardPage() {
     0
   );
 
-  // 收支趨勢圖資料（近6月）
-  const months = Array.from({ length: 6 }, (_, i) => dayjs().subtract(5 - i, "month").format("YYYY-MM"));
+  // 收支趨勢圖資料（近6月，基準為 currentDate）
+  const months = Array.from({ length: 6 }, (_, i) => today.subtract(5 - i, "month").format("YYYY-MM"));
   const trendStats = months.map(m => {
     const txs = transactions.filter(tx => tx.date && tx.date.startsWith(m));
     const income = txs.filter(tx => tx.type === "income").reduce((s, tx) => s + Number(tx.amount), 0);
@@ -148,7 +147,7 @@ export default function DashboardPage() {
     return { month: m, income, expense, balance: income - expense };
   });
 
-  // 本月支出圓餅圖
+  // 本月支出圓餅圖（基準為 currentDate 所在年月）
   const monthExpenseTx = transactions.filter(
     tx => tx.type === "expense" && dayjs(tx.date).month() + 1 === currentMonth && dayjs(tx.date).year() === currentYear
   );
@@ -161,32 +160,26 @@ export default function DashboardPage() {
   });
 
   // ===== 超級強化財務健康指數 =====
-  // 1. 預算執行率（30分）
   const budgetScore = (() => {
-    if (budgetTotal === 0) return 30; // 無預算視為滿分
+    if (budgetTotal === 0) return 30;
     const ratio = budgetsUsed / budgetTotal;
     if (ratio <= 1) return 30 - Math.round((ratio - 0.7) * 30);
     return Math.max(10, 30 - (ratio - 1) * 60);
   })();
 
-  // 2. 儲蓄率（20分）
   const savingsRate = monthIncome > 0 ? ((monthIncome - monthExpense) / monthIncome) : 0;
   const savingsScore = Math.max(0, Math.min(20, Math.round(savingsRate * 20)));
 
-  // 3. 資產增長（15分）
   const lastMonthAssets = totalAssets - (monthIncome - monthExpense);
   const assetGrowth = (totalAssets - lastMonthAssets) / (lastMonthAssets || 1);
   const assetScore = assetGrowth >= 0 ? Math.min(15, Math.round(assetGrowth * 30)) : 0;
 
-  // 4. 現金流穩定度（15分）
   const positiveMonths = trendStats.filter(t => t.balance >= 0).length;
   const cashFlowScore = Math.round((positiveMonths / trendStats.length) * 15);
 
-  // 5. 超支警示（10分）
   const overBudgetCount = budgetsWithUsed.filter(b => b.used > b.amount).length;
   const overBudgetScore = overBudgetCount === 0 ? 10 : Math.max(0, 10 - overBudgetCount * 3);
 
-  // 6. 支出異常（10分）
   let warningScore = 10;
   for (const cat of categories) {
     const sums = months.slice(0, -1).map(m =>
@@ -203,7 +196,6 @@ export default function DashboardPage() {
     budgetScore + savingsScore + assetScore + cashFlowScore + overBudgetScore + warningScore
   )));
 
-  // 預算提醒
   useEffect(() => {
     if (budgetTotal > 0 && budgetsUsed / budgetTotal >= 0.8) {
       toast("⚠️ 本期預算已達 80%，請注意控管支出", "warning");

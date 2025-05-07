@@ -1,10 +1,11 @@
 import { useFinanceStore } from "../store/financeStore";
 import { useDayManagerStore } from "../store/dayManagerStore";
 import { formatCurrency } from "../utils/format";
+import dayjs from "dayjs";
 
 export default function FinancesSnapshot() {
   const { accounts, transactions, settings, exchangeRates } = useFinanceStore();
-  const currentDate = useDayManagerStore(s => s.currentDate); // 關鍵：取用 dayManagerStore 的 currentDate
+  const currentDate = useDayManagerStore(s => s.currentDate); // 必須用 dayManagerStore 的 currentDate
 
   const defaultCurrency = settings.defaultCurrency || "HKD";
   const totalAssets = accounts.reduce(
@@ -17,8 +18,8 @@ export default function FinancesSnapshot() {
     0
   );
 
-  // 用 currentDate 做為「今日」基準
-  const todayTx = transactions.filter(tx => tx.date === currentDate);
+  // 「今日」是以 currentDate 為基準
+  const todayTx = transactions.filter((tx) => tx.date === currentDate);
   const todayIncome = todayTx.filter(tx => tx.type === "income").reduce((s, tx) => s + Number(tx.amount), 0);
   const todayExpense = todayTx.filter(tx => tx.type === "expense").reduce((s, tx) => s + Number(tx.amount), 0);
 
