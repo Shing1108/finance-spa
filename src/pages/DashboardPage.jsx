@@ -4,7 +4,16 @@ import { formatCurrency } from "../utils/format";
 import dayjs from "dayjs";
 import TransactionCard from "../components/TransactionCard";
 import { Line, Doughnut } from "react-chartjs-2";
-import { Chart as ChartJS, LineElement, PointElement, LinearScale, CategoryScale, ArcElement, Tooltip, Legend } from "chart.js";
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import { useToastStore } from "../store/toastStore";
 import AnalyticsAIWidget from "../components/AnalyticsAIWidget";
 import BalanceForecastWidget from "../components/BalanceForecastWidget";
@@ -21,6 +30,21 @@ const WIDGETS = [
   { key: "ai", label: "AI 智能分析" },
 ];
 
+// 跨年安全的預算週期計算函式
+function getBudgetPeriod(today, resetDay = 1) {
+  if (today.date() >= resetDay) {
+    // 本月 resetDay ~ 下月 resetDay-1
+    const periodStart = today.date(resetDay);
+    const periodEnd = today.add(1, "month").date(resetDay).subtract(1, "day");
+    return { periodStart, periodEnd };
+  } else {
+    // 上月 resetDay ~ 本月 resetDay-1
+    const periodStart = today.subtract(1, "month").date(resetDay);
+    const periodEnd = today.date(resetDay).subtract(1, "day");
+    return { periodStart, periodEnd };
+  }
+}
+
 export default function DashboardPage() {
   const { accounts, transactions, budgets, categories, settings, exchangeRates } = useFinanceStore();
   const toast = useToastStore((s) => s.addToast);
@@ -29,7 +53,7 @@ export default function DashboardPage() {
   const currentMonth = today.month() + 1;
   const currentYear = today.year();
 
-  // 小工具顯示狀態
+  // 儀表板可顯示的小工具
   const [widgets, setWidgets] = useState(
     () => JSON.parse(localStorage.getItem("widgets") || "null") ||
     { assets: true, today: true, budget: true, trend: true, pie: true, recent: true, health: true }
@@ -38,58 +62,53 @@ export default function DashboardPage() {
     localStorage.setItem("widgets", JSON.stringify(widgets));
   }, [widgets]);
 
-  // ====== 預算週期與剩餘天數計算 ======
-  // 取本月所有預算（可跨月，預設用第一筆 resetDay 作為本月週期起點）
+  // 取本月預算（支援自訂 resetDay，並正確處理跨年）
   const currentMonthBudgets = budgets.filter(b => b.year === currentYear && b.month === currentMonth);
-  // 若本月沒設定預算，則找下一筆未來預算
   const previewMonthBudgets = budgets.filter(b => dayjs(`${b.year}-${b.month}-01`) > today);
   const sampleBudget = currentMonthBudgets[0] || previewMonthBudgets[0];
 
+  // 取得預算重設日（全平台建議只用一個 resetDay，若多預算可讓用戶自訂）
   const resetDay = sampleBudget?.resetDay || 1;
-  // 決定本期預算起迄（預設每月 resetDay ~ 下月 resetDay-1）
-  let periodStart, periodEnd;
-  if (today.date() >= resetDay) {
-    periodStart = today.date(resetDay);
-    periodEnd = today.add(1, "month").date(resetDay).subtract(1, "day");
-  } else {
-    periodStart = today.subtract(1, "month").date(resetDay);
-    periodEnd = today.date(resetDay).subtract(1, "day");
-  }
 
-  // 找出本期所有預算
+  // 計算本期預算週期（起訖日），自動跨年
+  const { periodStart, periodEnd } = getBudgetPeriod(today, resetDay);
+
+  // 找出本期所有預算（以起始日為依據，假設同一 resetDay ）
   const budgetsThisPeriod = budgets.filter(b => {
     const thisBudgetStart = dayjs(`${b.year}-${String(b.month).padStart(2, "0")}-${String(b.resetDay || 1).padStart(2, "0")}`);
-    // 預算起始日落在本期起訖
     return thisBudgetStart.isSame(periodStart, "day");
   });
 
+  // 本期預算總額
   const budgetTotal = budgetsThisPeriod.reduce((sum, b) => sum + Number(b.amount), 0);
 
-  // 已用預算計算
+  // 本期已用預算
   const budgetsUsed = budgetsThisPeriod.reduce((sum, b) => {
-    const expense = transactions.filter(
-      tx => tx.type === "expense" &&
-      tx.categoryId === b.categoryId &&
-      dayjs(tx.date).isBetween(periodStart, periodEnd, null, "[]")
-    ).reduce((s, tx) => s + Number(tx.amount), 0);
+    const expense = transactions
+      .filter(
+        tx =>
+          tx.type === "expense" &&
+          tx.categoryId === b.categoryId &&
+          dayjs(tx.date).isBetween(periodStart, periodEnd, null, "[]")
+      )
+      .reduce((s, tx) => s + Number(tx.amount), 0);
     return sum + expense;
   }, 0);
 
+  // 剩餘預算、剩餘天數、每日可用
   const remainingBudget = budgetTotal - budgetsUsed;
   const daysLeft = periodEnd.diff(today, "day") + 1;
   const dailyBudget = daysLeft > 0 ? remainingBudget / daysLeft : 0;
 
-  // ======= 其他原本邏輯 =======
-
-  // 今日交易
-  const todayTx = useMemo(() => 
+  // 今日交易（依建立時間倒序最多3筆）
+  const todayTx = useMemo(() =>
     transactions
       .filter(tx => dayjs(tx.date).isSame(today, "day"))
       .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
       .slice(0, 3)
-  , [transactions, today]);
+    , [transactions, today]);
 
-  // 財務健康指數（簡化版）
+  // 財務健康指數（簡化評分）
   const monthIncome = transactions.filter(
     tx => tx.type === "income" && dayjs(tx.date).month() + 1 === currentMonth && dayjs(tx.date).year() === currentYear
   ).reduce((s, tx) => s + Number(tx.amount), 0);
@@ -103,7 +122,7 @@ export default function DashboardPage() {
     (1 - Math.abs(1 - budgetPerformance)) * 40
   );
 
-  // 智能預算提醒
+  // 預算提醒
   useEffect(() => {
     if (budgetTotal > 0 && budgetsUsed / budgetTotal >= 0.8) {
       toast("⚠️ 本期預算已達 80%，請注意控管支出", "warning");
@@ -133,7 +152,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* 新增平均每日可用預算卡片 */}
+      {/* 每日可用預算卡片 */}
       <div className="card">
         <div className="card-header">每日可用預算（至下次預算重設）</div>
         <div className="card-body">
@@ -189,7 +208,7 @@ export default function DashboardPage() {
               <div className="empty-message">尚未設定預算</div>
             ) : (
               <div>
-                <div>本月預算：{formatCurrency(budgetTotal, defaultCurrency)}</div>
+                <div>本期預算：{formatCurrency(budgetTotal, defaultCurrency)}</div>
                 <div>已用：{formatCurrency(budgetsUsed, defaultCurrency)}</div>
                 <div>剩餘：{formatCurrency(remainingBudget, defaultCurrency)}</div>
                 <div style={{ background: "#e0e7ef", borderRadius: 6, height: 10, overflow: "hidden", margin: "6px 0" }}>
@@ -205,8 +224,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-            {/* 財務健康指數 */}
-            {widgets.health && (
+      {/* 財務健康指數 */}
+      {widgets.health && (
         <div className="card">
           <div className="card-header">財務健康指數</div>
           <div className="card-body">
@@ -225,7 +244,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
 
       {/* 收支趨勢圖 */}
       {widgets.trend && (
@@ -308,10 +326,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-
-
-{widgets.forecast && <BalanceForecastWidget />}
-{widgets.ai && <AnalyticsAIWidget />}
+      {/* 結餘預測與 AI 分析 */}
+      {widgets.forecast && <BalanceForecastWidget />}
+      {widgets.ai && <AnalyticsAIWidget />}
 
       {/* 小工具自訂 */}
       <div className="card" style={{ marginBottom: 20 }}>
