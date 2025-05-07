@@ -21,6 +21,7 @@ export default function TransactionsPage() {
     date: dayjs().format("YYYY-MM-DD"),
     categoryId: "",
     accountId: "",
+    toAccountId: "",
     amount: "",
     note: "",
   });
@@ -70,14 +71,20 @@ export default function TransactionsPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.amount || !form.categoryId || !form.accountId) return;
+    if (!form.amount || !form.accountId) return;
+    if (form.type === "transfer" && (!form.toAccountId || form.toAccountId === form.accountId)) {
+      alert("請選擇不同的轉出與轉入戶口");
+      return;
+    }
     addTransaction({
       ...form,
       amount: parseFloat(form.amount),
       createdAt: new Date().toISOString(),
       id: Math.random().toString(36).slice(2),
+      // transfer: categoryId 可留空
+      categoryId: form.type === "transfer" ? "" : form.categoryId,
     });
-    if (form.note && form.categoryId) addNoteSuggestion(form.categoryId, form.note);
+    if (form.note && form.categoryId && form.type !== "transfer") addNoteSuggestion(form.categoryId, form.note);
     setForm((f) => ({ ...f, amount: "", note: "" }));
   };
 
@@ -178,107 +185,153 @@ export default function TransactionsPage() {
       <div className="card-body">
         {/* 新增表單 */}
         <form onSubmit={handleSubmit} style={{ marginBottom: 12 }}>
-          <div className="form-group">
-            <label>類型</label>
-            <select
-              name="type"
-              className="form-control"
-              value={form.type}
-              onChange={handleFormChange}
-              required
-            >
-              <option value="income">收入</option>
-              <option value="expense">支出</option>
-              <option value="transfer">轉賬</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>日期</label>
-            <input
-              type="date"
-              name="date"
-              className="form-control"
-              value={form.date}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>分類</label>
-            <select
-              name="categoryId"
-              className="form-control"
-              value={form.categoryId}
-              onChange={handleFormChange}
-              required
-            >
-              {filteredCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>戶口</label>
-            <select
-              name="accountId"
-              className="form-control"
-              value={form.accountId}
-              onChange={handleFormChange}
-              required
-            >
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name}（{acc.currency}）
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>金額</label>
-            <input
-              type="number"
-              name="amount"
-              className="form-control"
-              value={form.amount}
-              onChange={handleFormChange}
-              required
-              min="0"
-              step="0.01"
-            />
-          </div>
-          <div className="form-group">
-            <label>備註</label>
-            <input
-              name="note"
-              className="form-control"
-              value={form.note}
-              onChange={handleFormChange}
-              autoComplete="off"
-              placeholder="可輸入新備註，或點下方快速選擇"
-            />
-            {currentNoteSuggestions.length > 0 && (
-              <div className="quick-note-buttons">
-                {currentNoteSuggestions.map((sug, idx) => (
-                  <button
-                    type="button"
-                    className="quick-note-btn"
-                    key={idx}
-                    onClick={() =>
-                      setForm((f) => ({ ...f, note: sug }))
-                    }
-                  >
-                    {sug}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button type="submit" className="btn btn-primary">
-            新增
+  <div className="form-group">
+    <label>類型</label>
+    <select
+      name="type"
+      className="form-control"
+      value={form.type}
+      onChange={handleFormChange}
+      required
+    >
+      <option value="income">收入</option>
+      <option value="expense">支出</option>
+      <option value="transfer">轉賬</option>
+    </select>
+  </div>
+  <div className="form-group">
+    <label>日期</label>
+    <input
+      type="date"
+      name="date"
+      className="form-control"
+      value={form.date}
+      onChange={handleFormChange}
+      required
+    />
+  </div>
+  {form.type === "transfer" ? (
+    <>
+      <div className="form-group">
+        <label>轉出戶口</label>
+        <select
+          name="accountId"
+          className="form-control"
+          value={form.accountId}
+          onChange={handleFormChange}
+          required
+        >
+          <option value="">選擇戶口</option>
+          {accounts.map((acc) => (
+            <option key={acc.id} value={acc.id}>
+              {acc.name}（{acc.currency}）
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>轉入戶口</label>
+        <select
+          name="toAccountId"
+          className="form-control"
+          value={form.toAccountId || ""}
+          onChange={handleFormChange}
+          required
+        >
+          <option value="">選擇戶口</option>
+          {accounts
+            .filter((acc) => acc.id !== form.accountId)
+            .map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name}（{acc.currency}）
+              </option>
+            ))}
+        </select>
+      </div>
+    </>
+  ) : (
+    <div className="form-group">
+      <label>戶口</label>
+      <select
+        name="accountId"
+        className="form-control"
+        value={form.accountId}
+        onChange={handleFormChange}
+        required
+      >
+        {accounts.map((acc) => (
+          <option key={acc.id} value={acc.id}>
+            {acc.name}（{acc.currency}）
+          </option>
+        ))}
+      </select>
+    </div>
+  )}
+
+  {/* 只有非轉賬時才顯示分類 */}
+  {form.type !== "transfer" && (
+    <div className="form-group">
+      <label>分類</label>
+      <select
+        name="categoryId"
+        className="form-control"
+        value={form.categoryId}
+        onChange={handleFormChange}
+        required
+      >
+        {filteredCategories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  )}
+
+  <div className="form-group">
+    <label>金額</label>
+    <input
+      type="number"
+      name="amount"
+      className="form-control"
+      value={form.amount}
+      onChange={handleFormChange}
+      required
+      min="0"
+      step="0.01"
+    />
+  </div>
+  <div className="form-group">
+    <label>備註</label>
+    <input
+      name="note"
+      className="form-control"
+      value={form.note}
+      onChange={handleFormChange}
+      autoComplete="off"
+      placeholder="可輸入新備註，或點下方快速選擇"
+    />
+    {currentNoteSuggestions.length > 0 && (
+      <div className="quick-note-buttons">
+        {currentNoteSuggestions.map((sug, idx) => (
+          <button
+            type="button"
+            className="quick-note-btn"
+            key={idx}
+            onClick={() =>
+              setForm((f) => ({ ...f, note: sug }))
+            }
+          >
+            {sug}
           </button>
-        </form>
+        ))}
+      </div>
+    )}
+  </div>
+  <button type="submit" className="btn btn-primary">
+    新增
+  </button>
+</form>
         <br></br><br></br>
         <h3 className="mb-2">交易記錄</h3>
         <br></br>
