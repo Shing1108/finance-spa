@@ -727,7 +727,7 @@ button, input, select, textarea {
     right: 0;
     height: 155px; /* 快照+導航欄總高度 */
     z-index: 900; /* 在快照和導航下方 */
-    background: transparent;
+    background: #121212;
     pointer-events: none;
   }
 
