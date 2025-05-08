@@ -22,64 +22,6 @@ function getAccountTypeName(type) {
   }[type] || type;
 }
 
-// 帳戶預覽 Modal，含最近5筆交易
-function AccountPreviewModal({ open, account, onClose, onEdit, onDelete, transactions, categories, mainCurrency, exchangeRates }) {
-  if (!open || !account) return null;
-  // 最近5筆該帳戶的交易
-  const recentTx = transactions
-    .filter(tx => tx.accountId === account.id)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
-  return (
-    <Modal open={open} onClose={onClose} title="戶口概覽">
-      <div style={{fontWeight:600, fontSize:20}}>{account.name}</div>
-      <div>類型：{getAccountTypeName(account.type)}</div>
-      <div>餘額：{formatCurrency(account.balance, account.currency)}</div>
-      <div>主幣種換算：{formatCurrency(toMainCurrency(Number(account.balance), account.currency, mainCurrency, exchangeRates), mainCurrency)}</div>
-      <div>貨幣：{account.currency}</div>
-      {account.note && <div>備註：{account.note}</div>}
-      <div style={{color:"#888", fontSize:13, marginTop:10}}>建立時間：{account.createdAt?.slice(0,10)}</div>
-      <div style={{margin:"18px 0 8px 0", fontWeight:500}}>最近交易記錄</div>
-      {recentTx.length === 0
-        ? <div style={{color:"#888", fontSize:13}}>暫無交易</div>
-        : recentTx.map(tx => {
-            const cat = categories.find(c=>c.id===tx.categoryId);
-            return (
-              <div key={tx.id} style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderBottom: "1px solid #eee",
-                padding: "6px 0"
-              }}>
-                <div>
-                  <div style={{ fontWeight: 500 }}>
-                    {cat?.name || "未分類"}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#888" }}>
-                    {tx.date} {tx.note && "・" + tx.note}
-                  </div>
-                </div>
-                <div style={{
-                  fontWeight: 600,
-                  color: tx.type === "income" ? "#2ecc71" : "#e74c3c"
-                }}>
-                  {tx.type === "income" ? "+" : "-"}
-                  {formatCurrency(tx.amount, tx.currency || account.currency)}
-                </div>
-              </div>
-            );
-          })}
-      <div className="modal-footer" style={{marginTop:18}}>
-        <button className="btn btn-secondary" onClick={()=>onEdit(account)}>編輯</button>
-        <button className="btn btn-danger" style={{marginLeft:8}} onClick={()=>onDelete(account)}>
-          刪除
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
 export default function AccountsPage() {
   const { accounts, addAccount, updateAccount, deleteAccount, settings, exchangeRates, transactions, categories } = useFinanceStore();
   const [view, setView] = useState("card");
@@ -130,9 +72,11 @@ export default function AccountsPage() {
   function handleFormSubmit(e) {
     e.preventDefault();
     if (!form.name || !form.type) return;
+    // balance 與 initialBalance 都要設，確保後續計算正確
     const payload = {
       ...form,
-      initialBalance: parseFloat(form.balance)
+      balance: parseFloat(form.balance),
+      initialBalance: parseFloat(form.balance),
     };
     if (editAccount) {
       updateAccount(editAccount.id, payload);
@@ -155,6 +99,63 @@ export default function AccountsPage() {
       sum + toMainCurrency(Number(acc.balance), acc.currency, mainCurrency, exchangeRates),
     0
   );
+
+  // 戶口預覽 Modal（內含近五筆交易）
+  function AccountPreviewModal({ open, account, onClose, onEdit, onDelete, transactions, categories, mainCurrency, exchangeRates }) {
+    if (!open || !account) return null;
+    const recentTx = transactions
+      .filter(tx => tx.accountId === account.id)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5);
+    return (
+      <Modal open={open} onClose={onClose} title="戶口概覽">
+        <div style={{fontWeight:600, fontSize:20}}>{account.name}</div>
+        <div>類型：{getAccountTypeName(account.type)}</div>
+        <div>餘額：{formatCurrency(account.balance, account.currency)}</div>
+        <div>主幣種換算：{formatCurrency(toMainCurrency(Number(account.balance), account.currency, mainCurrency, exchangeRates), mainCurrency)}</div>
+        <div>貨幣：{account.currency}</div>
+        {account.note && <div>備註：{account.note}</div>}
+        <div style={{color:"#888", fontSize:13, marginTop:10}}>建立時間：{account.createdAt?.slice(0,10)}</div>
+        <div style={{margin:"18px 0 8px 0", fontWeight:500}}>最近交易記錄</div>
+        {recentTx.length === 0
+          ? <div style={{color:"#888", fontSize:13}}>暫無交易</div>
+          : recentTx.map(tx => {
+              const cat = categories.find(c=>c.id===tx.categoryId);
+              return (
+                <div key={tx.id} style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid #eee",
+                  padding: "6px 0"
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>
+                      {cat?.name || "未分類"}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#888" }}>
+                      {tx.date} {tx.note && "・" + tx.note}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontWeight: 600,
+                    color: tx.type === "income" ? "#2ecc71" : "#e74c3c"
+                  }}>
+                    {tx.type === "income" ? "+" : "-"}
+                    {formatCurrency(tx.amount, tx.currency || account.currency)}
+                  </div>
+                </div>
+              );
+            })}
+        <div className="modal-footer" style={{marginTop:18}}>
+          <button className="btn btn-secondary" onClick={()=>onEdit(account)}>編輯</button>
+          <button className="btn btn-danger" style={{marginLeft:8}} onClick={()=>onDelete(account)}>
+            刪除
+          </button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <div className="card">
