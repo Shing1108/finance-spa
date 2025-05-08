@@ -147,11 +147,12 @@ body {
     flex-direction: column;
     height: 100%;
     width: 100%;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     /*overflow: hidden;*/
     transition: background-color var(--transition-normal), color var(--transition-normal);
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
     position: relative;
 }
 
@@ -2191,10 +2192,7 @@ button, input, select, textarea {
 /* ===== 響應式設計 ===== */
 
 @media (max-width: 768px) {
-    :root {
-        --header-area-height: 155px; /* 減小移動設備上的頂部區域高度 */
-    }
-    
+
     .finances-snapshot {
         width: 100%;
         justify-content: space-between;
