@@ -27,9 +27,32 @@ function ApplySettingsEffect() {
   return null;
 }
 
+function FixInitialBalanceOnce() {
+  useEffect(() => {
+    // 只檢查一次
+    const { accounts, updateAccount } = useFinanceStore.getState();
+    let fixed = false;
+    accounts.forEach(acc => {
+      if (
+        typeof acc.initialBalance !== "number" ||
+        isNaN(acc.initialBalance) ||
+        acc.initialBalance === 0
+      ) {
+        updateAccount(acc.id, { initialBalance: acc.balance });
+        fixed = true;
+      }
+    });
+    if (fixed) {
+      alert("已自動補齊所有舊帳戶的初始餘額，請重新整理頁面！");
+    }
+  }, []);
+  return null;
+}
+
 function Root() {
   return (
     <>
+      <FixInitialBalanceOnce /> {/* <<<<<< 這裡加進來 */}
       <ApplySettingsEffect />
       <App />
     </>
