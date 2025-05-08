@@ -211,7 +211,7 @@ button, input, select, textarea {
 .top-navigation {
     background-color: var(--card-bg);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin-top : 44px;
+    margin-top : 64px;
     width: 100%;
     height: var(--tabs-height);
     position: fixed;
@@ -739,9 +739,8 @@ button, input, select, textarea {
     right: 0;
     z-index: 1000;
     gap: var(--spacing-sm);
-    padding-top: 44px;
     padding: calc(var(--spacing-sm) + 0) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
-    margin-top: 46px;
+    margin-top: 66px;
     margin-bottom: var(--spacing-sm);
     overflow-x: auto; /* 允許在極窄屏幕上滾動 */
     scrollbar-width: none;
@@ -2212,7 +2211,7 @@ button, input, select, textarea {
     .main-content {
         padding: var(--spacing-sm);
         padding-bottom: 80px;
-        padding-top: 200px;
+        padding-top: 220px;
     }
     
     .card-header {
