@@ -2,7 +2,6 @@
 
 /* 全局變量 */
 :root {
-    --safe-area-inset-top: env(safe-area-inset-top, 0px);
     /* 顏色系統 */
     --primary-color: #3498db;
     --primary-dark: #2980b9;
@@ -152,7 +151,6 @@ body {
     transition: background-color var(--transition-normal), color var(--transition-normal);
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    padding-top: var(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     position: relative;
 }
@@ -203,7 +201,6 @@ button, input, select, textarea {
     right: 0;
     background-color: var(--bg-color);
     z-index: var(--z-index-fixed-nav);
-    padding-top: var(safe-area-inset-top, 0px);
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -510,7 +507,7 @@ button, input, select, textarea {
     transition: opacity var(--transition-normal);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: var(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;
+    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
 }
 
 
@@ -703,7 +700,7 @@ button, input, select, textarea {
     align-items: center;
     justify-content: center;
     transition: opacity var(--transition-normal);
-    padding: var(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;
+    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
 }
 
 .spinner {
@@ -725,7 +722,7 @@ button, input, select, textarea {
 .fixed-top-bg {
     display: block;
     position: fixed;
-    top: var(safe-area-inset-top, 0px);
+    top: 0;
     left: 0;
     right: 0;
     height: 155px; /* 快照+導航欄總高度 */
@@ -743,7 +740,8 @@ button, input, select, textarea {
     z-index: 1000;
     gap: var(--spacing-sm);
     padding-top: 44px;
-    padding: calc(var(--spacing-sm) + var(safe-area-inset-top, 0px)) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+    padding: calc(var(--spacing-sm) + 0) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+    margin-top: 46px;
     margin-bottom: var(--spacing-sm);
     overflow-x: auto; /* 允許在極窄屏幕上滾動 */
     scrollbar-width: none;
@@ -2492,7 +2490,7 @@ button, input, select, textarea {
     .main-content {
         overflow: visible;
         padding: 0;
-        margin-top: calc(var(--header-area-height) + var(safe-area-inset-top, 0px));
+        margin-top: calc(var(--header-area-height) + 0);
     }
     
     .card {
