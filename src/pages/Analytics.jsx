@@ -8,6 +8,8 @@ import Calendar from "../components/Calendar";
 import { formatCurrency } from "../utils/format";
 import TransactionCard from "../components/TransactionCard";
 
+import { Line } from "react-chartjs-2";
+
 // 工具
 function getMonthList(from, to) {
   const list = [];
@@ -159,6 +161,16 @@ export default function AnalyticsPage() {
     amount: Number(acc.balance),
     currency: acc.currency,
   }));
+
+  // 取得本月每日收支統計
+const daysInMonth = now.daysInMonth();
+const dailyStats = Array.from({ length: daysInMonth }, (_, i) => {
+  const date = now.startOf("month").add(i, "day").format("YYYY-MM-DD");
+  const txs = transactions.filter(tx => tx.date === date);
+  const income = txs.filter(tx => tx.type === "income").reduce((s, tx) => s + Number(tx.amount), 0);
+  const expense = txs.filter(tx => tx.type === "expense").reduce((s, tx) => s + Number(tx.amount), 0);
+  return { date, income, expense, balance: income - expense };
+});
 
   return (
     <div>
@@ -504,6 +516,36 @@ export default function AnalyticsPage() {
           </ul>
         </div>
       </div>
+      <div className="card">
+  <div className="card-header">本月每日收支趨勢</div>
+  <div className="card-body">
+    <Line
+      data={{
+        labels: dailyStats.map(d => parseInt(d.date.slice(-2), 10)),
+        datasets: [
+          {
+            label: "收入",
+            data: dailyStats.map(d => d.income),
+            borderColor: "#2ecc71",
+            backgroundColor: "rgba(46,204,113,0.15)",
+          },
+          {
+            label: "支出",
+            data: dailyStats.map(d => d.expense),
+            borderColor: "#e74c3c",
+            backgroundColor: "rgba(231,76,60,0.13)",
+          }
+        ],
+      }}
+      options={{
+        responsive: true,
+        plugins: { legend: { display: true } },
+        scales: { y: { beginAtZero: true } },
+      }}
+      height={180}
+    />
+  </div>
+</div>
     </div>
   );
 }

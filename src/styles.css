@@ -3196,3 +3196,18 @@ body.ios {
       min-width: 90px;
     }
   }
+
+  [data-theme="dark"] .calendar-container {
+    background-color: #1e2228;
+    color: #eee;
+  }
+  [data-theme="dark"] .calendar-container .date-cell {
+    background-color: #23272e;
+    color: #eee;
+  }
+  [data-theme="dark"] .calendar-container .date-cell.empty {
+    background-color: #181a1b;
+  }
+  [data-theme="dark"] .calendar-container .date-number {
+    color: #4ca6e5;
+  }

@@ -130,10 +130,14 @@ export default function AccountsPage() {
   function handleFormSubmit(e) {
     e.preventDefault();
     if (!form.name || !form.type) return;
+    const payload = {
+      ...form,
+      initialBalance: parseFloat(form.balance)
+    };
     if (editAccount) {
-      updateAccount(editAccount.id, form);
+      updateAccount(editAccount.id, payload);
     } else {
-      addAccount(form);
+      addAccount(payload);
     }
     setModalOpen(false);
   }

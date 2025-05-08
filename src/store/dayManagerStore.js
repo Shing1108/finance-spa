@@ -74,6 +74,7 @@ export const useDayManagerStore = create((set, get) => ({
 
     saveToLocalStorage('currentDate', today);
     set({ currentDate: today });
+    get().showYesterdaySummary();
 
     // 自動 recurring
     get().checkRecurring();
@@ -207,5 +208,17 @@ export const useDayManagerStore = create((set, get) => ({
     importantDates.splice(idx, 1);
     saveToLocalStorage('importantDates', importantDates);
     set({ importantDates });
+  },
+  showYesterdaySummary: () => {
+    const finance = useFinanceStore.getState();
+    const prevDate = dayjs(get().currentDate).subtract(1, "day").format("YYYY-MM-DD");
+    const txs = finance.transactions.filter(tx => tx.date === prevDate);
+    const income = txs.filter(tx => tx.type === "income").reduce((s, tx) => s + Number(tx.amount), 0);
+    const expense = txs.filter(tx => tx.type === "expense").reduce((s, tx) => s + Number(tx.amount), 0);
+    const count = txs.length;
+    setTimeout(() => window.alert(
+      `昨日(${prevDate})總結：\n收入：${income}\n支出：${expense}\n結餘：${income - expense}\n交易筆數：${count}`
+    ), 100);
+    return { income, expense, count };
   },
 }));
