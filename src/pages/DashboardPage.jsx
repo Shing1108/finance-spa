@@ -233,8 +233,8 @@ export default function DashboardPage() {
           <div className="card-header">預算狀態
             { budgetsWithUsed.length === 0 ? (<div></div>) : (  
               <div>           
-                <div style = {{marginTop:4}}>本期預算：{formatCurrency(budgetTotal, defaultCurrency)} / {formatCurrency(remainingBudget, defaultCurrency)}</div>
-                <div style = {{marginTop:4}}>本期預算使用百分比 : {Math.round((remainingBudget / budgetTotal) * 100)} %</div>
+                <div style = {{marginTop:4}}>本期預算 : {formatCurrency(remainingBudget, defaultCurrency)} / {formatCurrency(budgetTotal, defaultCurrency)} </div>
+                <div style = {{marginTop:4}}>本期預算使用百分比 : {Math.round(((budgetTotal - remainingBudget) / budgetTotal) * 100)} %</div>
                 <div style={{ background: "#e0e7ef", borderRadius: 6, height: 10, overflow: "hidden", margin: "10px 0" }}>
                   <div style={{
                     width: Math.min(100, Math.floor((budgetsUsed / budgetTotal) * 100)) + '%',
