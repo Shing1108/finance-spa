@@ -3211,3 +3211,7 @@ body.ios {
   [data-theme="dark"] .calendar-container .date-number {
     color: #4ca6e5;
   }
+
+  input, textarea, select {
+    font-size: 16px !important;
+  }
