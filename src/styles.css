@@ -720,14 +720,13 @@ button, input, select, textarea {
 /* ===== 頂部財務快照 ===== */
 
 .fixed-top-bg {
-    display: block;
+    background: #121212;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     height: 155px; /* 快照+導航欄總高度 */
     z-index: 900; /* 在快照和導航下方 */
-    background: #121212;
     pointer-events: none;
   }
 
