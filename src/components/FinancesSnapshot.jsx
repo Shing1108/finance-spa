@@ -1,7 +1,6 @@
 import { useFinanceStore } from "../store/financeStore";
 import { useDayManagerStore } from "../store/dayManagerStore";
 import { formatCurrency } from "../utils/format";
-import dayjs from "dayjs";
 
 export default function FinancesSnapshot() {
   const { accounts, transactions, settings, exchangeRates } = useFinanceStore();
@@ -24,7 +23,7 @@ export default function FinancesSnapshot() {
   const todayExpense = todayTx.filter(tx => tx.type === "expense").reduce((s, tx) => s + Number(tx.amount), 0);
 
   return (
-    <div className="finances-snapshot finances-snapshot-fixed">
+    <div className="finances-snapshot">
       <div className="snapshot-item blue-item">
         <div className="snapshot-label">總資產</div>
         <div className="snapshot-value">{formatCurrency(totalAssets, defaultCurrency)}</div>

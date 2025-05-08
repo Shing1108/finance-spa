@@ -75,7 +75,7 @@
     /* 導航欄高度 */
     --nav-height: 45px;
     --tabs-height: 45px;
-    --header-area-height: 120px; /* 包含頂部信息區域 */
+    --header-area-height: 170px; /* 包含頂部信息區域 */
     --bottom-bar-height: 40px; /* 減少底部欄高度 */
 }
 
@@ -214,7 +214,7 @@ button, input, select, textarea {
 .top-navigation {
     background-color: var(--card-bg);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-
+    margin-top : 44px;
     width: 100%;
     height: var(--tabs-height);
     position: fixed;
@@ -723,6 +723,7 @@ button, input, select, textarea {
 /* ===== 頂部財務快照 ===== */
 
 .fixed-top-bg {
+    display: block;
     position: fixed;
     top: var(safe-area-inset-top, 0px);
     left: 0;
@@ -741,6 +742,7 @@ button, input, select, textarea {
     right: 0;
     z-index: 1000;
     gap: var(--spacing-sm);
+    padding-top: 44px;
     padding: calc(var(--spacing-sm) + var(safe-area-inset-top, 0px)) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
     overflow-x: auto; /* 允許在極窄屏幕上滾動 */
@@ -2195,7 +2197,7 @@ button, input, select, textarea {
 
 @media (max-width: 768px) {
     :root {
-        --header-area-height: 110px; /* 減小移動設備上的頂部區域高度 */
+        --header-area-height: 155px; /* 減小移動設備上的頂部區域高度 */
     }
     
     .finances-snapshot {
@@ -2212,7 +2214,7 @@ button, input, select, textarea {
     .main-content {
         padding: var(--spacing-sm);
         padding-bottom: 80px;
-        padding-top: 150px;
+        padding-top: 200px;
     }
     
     .card-header {
