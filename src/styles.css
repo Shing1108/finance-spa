@@ -2791,10 +2791,7 @@ button, input, select, textarea {
     animation: slideInRight 0.3s forwards;
 }
 
-/* 確保頁面內容不會被固定頂部遮擋 */
-html.ios {
-    height: -webkit-fill-available;
-}
+/* ===== iOS Safari 特定樣式 ===== */
 
 body.ios {
     min-height: -webkit-fill-available;
