@@ -2,6 +2,7 @@ import { useFinanceStore } from "../store/financeStore";
 import { useDayManagerStore } from "../store/dayManagerStore";
 import { useEffect, useMemo, useState } from "react";
 import { formatCurrency } from "../utils/format";
+import TransactionPreviewModal from "../components/TransactionPreviewModal";
 import dayjs from "dayjs";
 import TransactionCard from "../components/TransactionCard";
 import { Line, Doughnut } from "react-chartjs-2";
@@ -75,6 +76,7 @@ export default function DashboardPage() {
   const today = dayjs(currentDate);
   const currentMonth = today.month() + 1;
   const currentYear = today.year();
+  const [previewTx, setPreviewTx] = useState(null);
 
   // 儀表板可顯示的小工具
   const [widgets, setWidgets] = useState(
@@ -267,8 +269,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 今日交易 */}
-      {widgets.today && (
+            {/* 今日交易 */}
+            {widgets.today && (
         <div className="card">
           <div className="card-header">今日交易</div>
           <div className="card-body">
@@ -284,6 +286,7 @@ export default function DashboardPage() {
                     tx={tx}
                     category={cat}
                     account={acc}
+                    onClick={() => setPreviewTx(tx)} // 新增
                   />
                 );
               })
@@ -292,35 +295,85 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* 交易預覽 Modal */}
+      <TransactionPreviewModal
+        open={!!previewTx}
+        tx={previewTx}
+        onClose={() => setPreviewTx(null)}
+        onEdit={() => {}}
+      />
+
+
       {/* 超級強化財務健康指數 */}
       {widgets.health && (
-        <div className="card">
-          <div className="card-header">超級財務健康指數</div>
-          <div className="card-body">
-            <div style={{ fontSize: 40, fontWeight: "bold", color: "#2563eb" }}>{healthScore}分</div>
-            <ul style={{ fontSize: 15 }}>
-              <li>預算執行率：{Math.round(budgetScore)}/30</li>
-              <li>儲蓄率：{Math.round(savingsScore)}/20</li>
-              <li>資產增長：{Math.round(assetScore)}/15</li>
-              <li>現金流穩定度：{Math.round(cashFlowScore)}/15</li>
-              <li>超支警示：{Math.round(overBudgetScore)}/10</li>
-              <li>支出異常：{Math.round(warningScore)}/10</li>
-            </ul>
-            <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
-              指數依據多個財務維度綜合計算（預算、儲蓄、資產、現金流、異常），分數越高代表財務越健康。
-            </div>
-            <div style={{ color: "#888", fontSize: 14, marginTop: 4 }}>
-              <b>
-                {healthScore >= 90 && "極健康，財務極強壯！"}
-                {healthScore >= 70 && healthScore < 90 && "健康良好，繼續保持！"}
-                {healthScore >= 50 && healthScore < 70 && "普通，建議檢討支出與儲蓄。"}
-                {healthScore >= 30 && healthScore < 50 && "偏弱，注意預算與現金流。"}
-                {healthScore < 30 && "高風險，需加強財務管理！"}
-              </b>
-            </div>
+  <div className="card">
+    <div className="card-header">超級財務健康指數</div>
+    <div className="card-body">
+      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        <div style={{
+          fontSize: 56, fontWeight: "bold", color: healthScore >= 80 ? "#2ecc71"
+          : healthScore >= 60 ? "#f39c12"
+          : "#e74c3c",
+          minWidth: 90, textAlign: "center"
+        }}>
+          {healthScore}分
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ height: 16, borderRadius: 10, background: "#eee", overflow: "hidden", marginBottom: 8 }}>
+            <div
+              style={{
+                width: `${healthScore}%`,
+                height: "100%",
+                background: healthScore >= 80 ? "linear-gradient(90deg, #2ecc71, #25c6aa)"
+                  : healthScore >= 60 ? "linear-gradient(90deg, #f9a825, #f39c12)"
+                  : "#e74c3c",
+                transition: "width 0.5s"
+              }}
+            />
+          </div>
+          <ul style={{ fontSize: 13, margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
+            <li>
+              <b>預算執行率（{Math.round(budgetScore)}/30）：</b><br></br>
+              預算已用比例越低越好，超支會扣分。
+            </li>
+            <li>
+              <b>儲蓄率（{Math.round(savingsScore)}/20）：</b><br></br>
+              （結餘/收入）越高越好。
+            </li>
+            <li>
+              <b>資產增長（{Math.round(assetScore)}/15）：</b><br></br>
+              本月資產有正成長越高分。
+            </li>
+            <li>
+              <b>現金流穩定度（{Math.round(cashFlowScore)}/15）：</b><br></br>
+              近半年有正結餘月數越多越高分。
+            </li>
+            <li>
+              <b>超支警示（{Math.round(overBudgetScore)}/10）：</b><br></br>
+              本期預算沒有超支越高分。
+            </li>
+            <li>
+              <b>支出異常（{Math.round(warningScore)}/10）：</b><br></br>
+              本月支出異常越少越高分。
+            </li>
+          </ul>
+          <div style={{ color: "#888", fontSize: 14, marginTop: 6 }}>
+            綜合上述六大指標計算，<br></br>分數越高代表財務越健康。
+          </div>
+          <div style={{ color: "#2563eb", fontWeight: 600, marginTop: 8 }}>
+            {
+              healthScore >= 90 ? "極健康，財務極強壯！" :
+              healthScore >= 70 ? "健康良好，繼續保持！" :
+              healthScore >= 50 ? "普通，建議檢討支出與儲蓄。" :
+              healthScore >= 30 ? "偏弱，注意預算與現金流。" :
+              "高風險，需加強財務管理！"
+            }
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
 
       {/* 收支趨勢圖 */}
       {widgets.trend && (
