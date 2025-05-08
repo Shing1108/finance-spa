@@ -84,6 +84,14 @@ export default function AccountsPage() {
     setModalOpen(false);
   }
 
+  function handleAdjust(acc) {
+    const str = prompt(`請輸入「${acc.name}」欲校正的新餘額`, acc.balance);
+    if (str === null) return;
+    const newBalance = parseFloat(str);
+    if (isNaN(newBalance)) return alert("請輸入正確數字！");
+    useFinanceStore.getState().adjustAccountBalance(acc.id, newBalance);
+  }
+
   function handleDelete(account) {
     if (window.confirm(`確定要刪除戶口「${account.name}」嗎？`)) {
       deleteAccount(account.id);
@@ -216,6 +224,9 @@ export default function AccountsPage() {
                     <div className="account-actions">
                       <button className="btn-icon" onClick={e => {e.stopPropagation(); openEditModal(acc);}}>
                         <i className="fas fa-edit"></i>
+                      </button>
+                      <button className="btn btn-sm btn-secondary" onClick={e => {e.stopPropagation(); handleAdjust(acc);}}>
+                        校正餘額
                       </button>
                       <button className="btn-icon" onClick={e => {e.stopPropagation(); handleDelete(acc);}}>
                         <i className="fas fa-trash-alt"></i>

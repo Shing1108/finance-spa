@@ -17,13 +17,14 @@ const defaultSettings = {
   alertThreshold: 80
 };
 
+// 重算所有帳戶餘額，現在支援 type: "adjust"
 function recalculateAllAccountBalances(accounts, transactions) {
   const newAccounts = accounts.map(acc => ({
     ...acc,
     balance: typeof acc.initialBalance === "number" ? acc.initialBalance : 0
   }));
   transactions.forEach(tx => {
-    if (tx.type === "income" && tx.accountId) {
+    if ((tx.type === "income" || tx.type === "adjust") && tx.accountId) {
       const acc = newAccounts.find(a => a.id === tx.accountId);
       if (acc) acc.balance += Number(tx.amount);
     }
@@ -86,7 +87,7 @@ export const useFinanceStore = create(
       deleteCategory: (id) => set((s) => ({
         categories: s.categories.filter(cat => cat.id !== id)
       })),
-      // 交易相關（防呆：每筆 id 唯一，已存在不再新增）
+      // === 交易相關（支援 adjust） ===
       addTransaction: (data) => set((s) => {
         const id = data.id || crypto.randomUUID();
         if (s.transactions.find(tx => tx.id === id)) return {};
@@ -101,6 +102,30 @@ export const useFinanceStore = create(
       }),
       deleteTransaction: (id) => set((s) => {
         const txs = s.transactions.filter(tx => tx.id !== id);
+        const newAccounts = recalculateAllAccountBalances(s.accounts, txs);
+        return { transactions: txs, accounts: newAccounts };
+      }),
+      // ======= 校正帳戶餘額（自動產生調整交易）=======
+      adjustAccountBalance: (accountId, newBalance) => set((s) => {
+        const acc = s.accounts.find(a => a.id === accountId);
+        if (!acc) return {};
+        // 先 replay 計算目前餘額
+        const replayed = recalculateAllAccountBalances([acc], s.transactions.filter(tx => tx.accountId === accountId || tx.toAccountId === accountId));
+        const currentBalance = replayed[0]?.balance ?? acc.balance;
+        const diff = Number(newBalance) - Number(currentBalance);
+        if (Math.abs(diff) < 1e-8) return {}; // 差額為0不處理
+        // 新增 adjust 交易
+        const adjustTx = new Transaction({
+          type: "adjust",
+          accountId,
+          amount: diff,
+          date: new Date().toISOString().slice(0, 10),
+          note: "手動校正餘額",
+          currency: acc.currency,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        const txs = [...s.transactions, adjustTx];
         const newAccounts = recalculateAllAccountBalances(s.accounts, txs);
         return { transactions: txs, accounts: newAccounts };
       }),
