@@ -1,5 +1,5 @@
+// models/Transaction.js
 import dayjs from "dayjs";
-
 export class Transaction {
   constructor(data = {}) {
     this.id = data.id || crypto.randomUUID();
@@ -9,7 +9,6 @@ export class Transaction {
     this.accountId = data.accountId || '';
     this.toAccountId = data.toAccountId || '';
     this.categoryId = data.categoryId || '';
-    // 保證 date 欄位永遠是 YYYY-MM-DD
     this.date = dayjs(data.date || new Date()).format("YYYY-MM-DD");
     this.note = data.note || '';
     this.currency = data.currency || 'HKD';

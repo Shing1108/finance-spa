@@ -17,7 +17,6 @@ const defaultSettings = {
   alertThreshold: 80
 };
 
-// **重算帳戶餘額時以 initialBalance 為起點**
 function recalculateAllAccountBalances(accounts, transactions) {
   const newAccounts = accounts.map(acc => ({
     ...acc,
@@ -55,7 +54,10 @@ export const useFinanceStore = create(
       noteSuggestions: {},
       setSettings: (s) => set({ settings: { ...get().settings, ...s } }),
       addAccount: (data) => set((s) => ({
-        accounts: [...s.accounts, new Account({ ...data, initialBalance: parseFloat(data.initialBalance ?? data.balance ?? 0) })]
+        accounts: [...s.accounts, new Account({
+          ...data,
+          initialBalance: parseFloat(data.initialBalance ?? data.balance ?? 0)
+        })]
       })),
       updateAccount: (id, data) =>
         set((s) => ({
@@ -64,7 +66,6 @@ export const useFinanceStore = create(
               ? {
                   ...acc,
                   ...data,
-                  // 更新 initialBalance 只在明確有傳入時
                   initialBalance:
                     typeof data.initialBalance === "number"
                       ? data.initialBalance
@@ -85,9 +86,11 @@ export const useFinanceStore = create(
       deleteCategory: (id) => set((s) => ({
         categories: s.categories.filter(cat => cat.id !== id)
       })),
-      // ===== 交易相關（重點修正）=====
+      // 交易相關（防呆：每筆 id 唯一，已存在不再新增）
       addTransaction: (data) => set((s) => {
-        const txs = [...s.transactions, new Transaction(data)];
+        const id = data.id || crypto.randomUUID();
+        if (s.transactions.find(tx => tx.id === id)) return {};
+        const txs = [...s.transactions, new Transaction({ ...data, id })];
         const newAccounts = recalculateAllAccountBalances(s.accounts, txs);
         return { transactions: txs, accounts: newAccounts };
       }),

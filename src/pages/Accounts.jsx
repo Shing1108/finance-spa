@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Modal } from "../components/Modal";
 import { formatCurrency } from "../utils/format";
 
-// 幣值換算輔助
 function toMainCurrency(amount, currency, mainCurrency, exchangeRates) {
   if (currency === mainCurrency) return amount;
   const fromRate = exchangeRates[currency];
@@ -72,7 +71,6 @@ export default function AccountsPage() {
   function handleFormSubmit(e) {
     e.preventDefault();
     if (!form.name || !form.type) return;
-    // balance 與 initialBalance 都要設，確保後續計算正確
     const payload = {
       ...form,
       balance: parseFloat(form.balance),
