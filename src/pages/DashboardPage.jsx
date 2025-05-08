@@ -230,20 +230,11 @@ export default function DashboardPage() {
       {/* 預算狀態（每一項預算細節） */}
       {widgets.budget && (
         <div className="card">
-          <div className="card-header">預算狀態</div>
-          <div className="card-body">
-            {budgetsWithUsed.length === 0 ? (
-              <div className="empty-message">尚未設定預算</div>
-            ) : (
-              <div>
-                {budgetsWithUsed.map(b =>
-                  <div key={b.id} style={{marginBottom:8}}>
-                    <b>{categories.find(c=>c.id===b.categoryId)?.name || "未分類"}</b>
-                    ：{formatCurrency(b.used, defaultCurrency)} / {formatCurrency(b.amount, defaultCurrency)}
-                    （{Math.round((b.used / b.amount) * 100)}%）
-                    {b.used > b.amount && <span style={{color:"#e74c3c"}}>（超支！）</span>}
-                  </div>
-                )}
+          <div className="card-header">預算狀態
+            { budgetsWithUsed.length === 0 ? (<div></div>) : (  
+              <div>           
+                <div style = {{marginTop:4}}>本期預算：{formatCurrency(budgetTotal, defaultCurrency)} / {formatCurrency(remainingBudget, defaultCurrency)}</div>
+                <div style = {{marginTop:4}}>本期預算使用百分比 : {Math.round((remainingBudget / budgetTotal) * 100)} %</div>
                 <div style={{ background: "#e0e7ef", borderRadius: 6, height: 10, overflow: "hidden", margin: "10px 0" }}>
                   <div style={{
                     width: Math.min(100, Math.floor((budgetsUsed / budgetTotal) * 100)) + '%',
@@ -251,6 +242,25 @@ export default function DashboardPage() {
                     background: budgetsUsed / budgetTotal >= 0.8 ? "#e74c3c" : "#3498db"
                   }}></div>
                 </div>
+              </div>
+            )}
+          </div>
+
+
+          <div className="card-body">
+            {budgetsWithUsed.length === 0 ? (
+              <div className="empty-message">尚未設定預算</div>
+            ) : (
+              <div>
+                {budgetsWithUsed.map(b =>            
+                  <div key={b.id} style={{marginBottom:8}}>
+                    <b>{categories.find(c=>c.id===b.categoryId)?.name || "未分類"}</b>
+                    ：{formatCurrency(b.used, defaultCurrency)} / {formatCurrency(b.amount, defaultCurrency)}
+                    （{Math.round((b.used / b.amount) * 100)}%）
+                    {b.used > b.amount && <span style={{color:"#e74c3c"}}>（超支！）</span>}
+                  </div>
+                )}
+
               </div>
             )}
           </div>

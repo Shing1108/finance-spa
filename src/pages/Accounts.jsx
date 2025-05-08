@@ -222,11 +222,11 @@ export default function AccountsPage() {
                     <div className="account-currency">{acc.currency}</div>
                     {acc.note && <div className="account-note">備註：{acc.note}</div>}
                     <div className="account-actions">
-                      <button className="btn-icon" onClick={e => {e.stopPropagation(); openEditModal(acc);}}>
-                        <i className="fas fa-edit"></i>
-                      </button>
                       <button className="btn btn-sm btn-secondary" onClick={e => {e.stopPropagation(); handleAdjust(acc);}}>
                         校正餘額
+                      </button>
+                      <button className="btn-icon" onClick={e => {e.stopPropagation(); openEditModal(acc);}}>
+                        <i className="fas fa-edit"></i>
                       </button>
                       <button className="btn-icon" onClick={e => {e.stopPropagation(); handleDelete(acc);}}>
                         <i className="fas fa-trash-alt"></i>
