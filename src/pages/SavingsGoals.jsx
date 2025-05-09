@@ -1,4 +1,5 @@
 import { useFinanceStore } from "../store/financeStore";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import { useState } from "react";
 import { Modal } from "../components/Modal";
 import dayjs from "dayjs";
@@ -22,6 +23,7 @@ export default function SavingsGoalsPage() {
     settings,
     exchangeRates,
   } = useFinanceStore();
+  const currentDate = useDayManagerStore(s => s.currentDate);
   const [modalOpen, setModalOpen] = useState(false);
   const [editGoal, setEditGoal] = useState(null);
 
@@ -254,7 +256,7 @@ export default function SavingsGoalsPage() {
 }
 
 function getDeadlineStatus(deadline) {
-  const today = dayjs().startOf("day");
+  const today = dayjs(currentDate).startOf("day");
   const goalDay = dayjs(deadline);
   if (goalDay.isSame(today, "day")) return "就是今天";
   if (goalDay.isAfter(today)) return `還有 ${goalDay.diff(today, "day")} 天`;

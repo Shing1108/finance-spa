@@ -1,16 +1,18 @@
 import { useFinanceStore } from "../store/financeStore";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import { useEffect, useState } from "react";
 import { formatCurrency } from "../utils/format";
 import dayjs from "dayjs";
 
 export default function AnalyticsAIWidget() {
   const { transactions, categories, settings } = useFinanceStore();
+  const currentDate = useDayManagerStore(s => s.currentDate);
   const defaultCurrency = settings.defaultCurrency || "HKD";
   const [aiAdvice, setAIAdvice] = useState("");
 
   useEffect(() => {
     // 本地簡易 AI 分析
-    const thisMonth = dayjs().format("YYYY-MM");
+    const thisMonth = dayjs(currentDate).format("YYYY-MM");
     const expenseTx = transactions.filter(
       tx => tx.type === "expense" && (tx.date || "").startsWith(thisMonth)
     );
@@ -26,7 +28,7 @@ export default function AnalyticsAIWidget() {
     let advice = `本月最大支出類別為「${maxCat?.name || "未分類"}」，共：${formatCurrency(byCat[maxCatId], defaultCurrency)}。\n`;
 
     // 異常檢查
-    const allMonths = Array.from({ length: 13 }, (_, i) => dayjs().subtract(12 - i, "month").format("YYYY-MM"));
+    const allMonths = Array.from({ length: 13 }, (_, i) => dayjs(currentDate).subtract(12 - i, "month").format("YYYY-MM"));
     for (const catId of Object.keys(byCat)) {
       const sums = allMonths.slice(0, -1).map(m =>
         transactions.filter(tx =>
@@ -40,7 +42,7 @@ export default function AnalyticsAIWidget() {
       }
     }
     setAIAdvice(advice);
-  }, [transactions, categories, settings]);
+  }, [transactions, categories, settings, currentDate]);
 
   return (
     <div className="card">

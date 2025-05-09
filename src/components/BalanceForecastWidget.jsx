@@ -1,11 +1,13 @@
 import { useFinanceStore } from "../store/financeStore";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import { formatCurrency } from "../utils/format";
 import dayjs from "dayjs";
 
 export default function BalanceForecastWidget() {
   const { accounts, transactions, settings, exchangeRates } = useFinanceStore();
+  const currentDate = useDayManagerStore(s => s.currentDate);
   const defaultCurrency = settings.defaultCurrency || "HKD";
-  const today = dayjs();
+  const today = dayjs(currentDate);
   const monthStart = today.startOf("month");
   const daysPast = today.diff(monthStart, "day") + 1;
   const daysLeft = today.daysInMonth() - today.date();
@@ -39,7 +41,7 @@ export default function BalanceForecastWidget() {
         <div style={{ fontWeight: 700, color: "#2563eb", fontSize: 20 }}>
           預測月底結餘：{formatCurrency(forecast, defaultCurrency)}
         </div>
-        <small style={{ color: "#888" }}>(僅供參考，根據本月平均推算)</small>
+        <small style={{ color: "#888" }}>(僅供參考，根據本期平均推算)</small>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useFinanceStore } from "../store/financeStore";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import { Doughnut, Line } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale } from "chart.js";
 import dayjs from "dayjs";
@@ -15,10 +16,11 @@ function toMainCurrency(amount, currency, mainCurrency, exchangeRates) {
 
 export default function StatisticsPage() {
   const { transactions, categories, settings, exchangeRates } = useFinanceStore();
+  const currentDate = useDayManagerStore(s => s.currentDate);
 
   // 當月篩選
-  const currentMonth = dayjs().month() + 1;
-  const currentYear = dayjs().year();
+  const currentMonth = dayjs(currentDate).month() + 1;
+  const currentYear = dayjs(currentDate).year();
   const mainCurrency = settings.defaultCurrency || "HKD";
 
   const incomeTx = transactions.filter(

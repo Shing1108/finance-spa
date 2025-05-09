@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useFinanceStore } from "../store/financeStore";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import { Modal } from "../components/Modal";
 import { formatCurrency } from "../utils/format";
 import dayjs from "dayjs";
@@ -25,15 +26,16 @@ function useIsMobile(breakpoint = 600) {
 
 export default function BudgetsPage() {
   const { budgets, categories, addBudget, updateBudget, deleteBudget, settings, exchangeRates, transactions } = useFinanceStore();
+  const currentDate = useDayManagerStore(s => s.currentDate);
   const [modalOpen, setModalOpen] = useState(false);
   const [editBudget, setEditBudget] = useState(null);
   const [form, setForm] = useState({
     categoryId: "",
     amount: "",
     period: "monthly",
-    year: dayjs().year(),
-    month: dayjs().month() + 1,
-    quarter: Math.ceil((dayjs().month() + 1) / 3),
+    year: dayjs(currentDate).year(),
+    month: dayjs(currentDate).month() + 1,
+    quarter: Math.ceil((dayjs(currentDate).month() + 1) / 3),
     resetDay: 1,
   });
 
@@ -46,7 +48,7 @@ export default function BudgetsPage() {
       .map(b => `${b.year}-${String(b.month).padStart(2, "0")}`)
   )).sort((a, b) => b.localeCompare(a));
   const [selectedMonth, setSelectedMonth] = useState(
-    `${dayjs().year()}-${String(dayjs().month() + 1).padStart(2, "0")}`
+    `${dayjs(currentDate).year()}-${String(dayjs(currentDate).month() + 1).padStart(2, "0")}`
   );
   // 過濾該月所有預算
   const budgetsOfMonth = budgets.filter(

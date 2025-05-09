@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useFinanceStore } from "../store/financeStore";
+import { useDayManagerStore } from "../store/dayManagerStore";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 dayjs.extend(isBetween);
@@ -11,17 +12,8 @@ import TransactionCard from "../components/TransactionCard";
 import { Line } from "react-chartjs-2";
 
 // 工具
-function getMonthList(from, to) {
-  const list = [];
-  let d = from.startOf("month");
-  while (d.isBefore(to, "month") || d.isSame(to, "month")) {
-    list.push(d.format("YYYY-MM"));
-    d = d.add(1, "month");
-  }
-  return list;
-}
-function getRecentMonths(n = 12) {
-  const now = dayjs();
+function getRecentMonths(n = 12, baseDay) {
+  const now = dayjs(baseDay);
   const arr = [];
   for (let i = n - 1; i >= 0; i--) {
     arr.push(now.subtract(i, "month").format("YYYY-MM"));
@@ -31,11 +23,12 @@ function getRecentMonths(n = 12) {
 
 export default function AnalyticsPage() {
   const { transactions, categories, accounts, settings } = useFinanceStore();
+  const currentDate = useDayManagerStore(s => s.currentDate);
   const defaultCurrency = settings.defaultCurrency || "HKD";
   const [selectedDate, setSelectedDate] = useState(null);
 
   // 1. 交易日曆
-  const now = dayjs();
+  const now = dayjs(currentDate);
   const monthStart = now.startOf("month");
   const monthEnd = now.endOf("month");
   const thisMonthTxs = transactions.filter(tx =>
@@ -60,7 +53,7 @@ export default function AnalyticsPage() {
     : [];
 
   // 5. 長期趨勢分析
-  const months = getRecentMonths(12);
+  const months = getRecentMonths(12, currentDate);
   const monthlyStats = months.map(m => {
     const txs = transactions.filter(tx => tx.date && tx.date.startsWith(m));
     const income = txs.filter(tx => tx.type === "income").reduce((s, tx) => s + Number(tx.amount), 0);
@@ -143,6 +136,7 @@ export default function AnalyticsPage() {
       categoryWarning.push({ cat: cat.name, avg: avgPrev, now: thisMonth });
     }
   });
+
 
   // 14. 年度分析
   const years = Array.from(
