@@ -4,12 +4,14 @@ import { useFinanceStore } from "../store/financeStore";
 import { auth, firestore } from "../firebase";
 import { doc, getDoc, setDoc, getDocs, deleteDoc, collection } from "firebase/firestore";
 import debounce from "lodash.debounce";
+import { useToastStore } from "../store/toastStore";
 
 // 自動同步與歷程備份（保留2份）
 // 用戶登入時自動拉取雲端，每次本地異動自動推雲端&備份歷程
 export default function SyncProvider() {
   const user = auth.currentUser;
   const unsubRef = useRef();
+  const addToast = useToastStore.getState().addToast;
 
   // 啟動時自動拉取雲端（登入階段）
   useEffect(() => {
@@ -33,6 +35,9 @@ export default function SyncProvider() {
         state.budgets, state.savingsGoals, state.recurringItems, state.settings
       ],
       debounce(async () => {
+        
+        addToast("正在同步至雲端...", "info", 1800);
+
         // 1. 取得雲端現有存檔，備份到 backup/ 目錄
         const userDoc = doc(firestore, "users", user.uid);
         const docSnap = await getDoc(userDoc);
@@ -64,6 +69,8 @@ export default function SyncProvider() {
           updatedAt: new Date().toISOString()
         };
         await setDoc(doc(firestore, "users", user.uid), uploadData);
+        await setDoc(doc(firestore, "users", user.uid), uploadData);
+        addToast("已自動同步至雲端", "success", 2200);
       }, 1000)
     );
     unsubRef.current = unsub;
