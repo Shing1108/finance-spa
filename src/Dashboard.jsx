@@ -14,6 +14,7 @@ import Statistics from "./pages/Statistics";
 import SavingsGoals from "./pages/SavingsGoals";
 import Analytics from "./pages/Analytics";
 import Sync from "./pages/Sync";
+import SyncProvider from "./components/SyncProvider";
 
 const PAGES = [
   DashboardPage,
@@ -36,6 +37,7 @@ export default function Dashboard() {
 
   return (
     <div className="app-container">
+      <SyncProvider />
       <div className="fixed-top-bg"></div>
       <FinancesSnapshot />
       <TopNavigation activeTab={activeTab} onTabChange={setActiveTab} />

@@ -1,6 +1,7 @@
 import { useFinanceStore } from "../store/financeStore";
 import ExchangeRatesModal from "./ExchangeRatesModal";
 import { useState } from "react";
+import BackupRestore from "../components/BackupRestore";
 
 // 輔助：全部設定項目預設值
 const DEFAULT_SETTINGS = {
@@ -118,6 +119,8 @@ export default function SettingsModal({ onClose }) {
               <label htmlFor="enableFirebaseSync">啟用雲端同步 (Firebase)</label>
             </div>
           </div>
+
+          <BackupRestore />
 
           {/* 貨幣設定 */}
           <div className="settings-section" style={{ marginBottom: 24 }}>
