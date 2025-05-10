@@ -1,16 +1,21 @@
-// src/components/SyncProvider.jsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFinanceStore } from "../store/financeStore";
 import { auth, firestore } from "../firebase";
 import { doc, getDoc, setDoc, getDocs, deleteDoc, collection } from "firebase/firestore";
 import debounce from "lodash.debounce";
 import { useToastStore } from "../store/toastStore";
 
-// 最穩定自動同步與歷史備份
 export default function SyncProvider() {
-  const user = auth.currentUser;
+  // 讓 user 為 React state，會自動 re-render！
+  const [user, setUser] = useState(auth.currentUser);
   const unsubRef = useRef();
   const addToast = useToastStore.getState().addToast;
+
+  // 監聽 Firebase auth 狀態
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(setUser);
+    return unsub;
+  }, []);
 
   // 1. 啟動時自動拉取雲端存檔
   useEffect(() => {
@@ -29,13 +34,11 @@ export default function SyncProvider() {
       }
     }
     pullCloudToLocal();
-    // eslint-disable-next-line
   }, [user]);
 
-  // 2. 任何本地資料異動都自動推送到雲端，並保留最近2份備份
+  // 2. 任何本地資料異動都自動推送到雲端
   useEffect(() => {
     if (!user) return;
-    // 用 JSON.stringify 追蹤所有深層內容變化
     const unsub = useFinanceStore.subscribe(
       state => JSON.stringify([
         state.accounts, state.transactions, state.categories,
@@ -43,9 +46,10 @@ export default function SyncProvider() {
         state.settings, state.noteSuggestions
       ]),
       debounce(async () => {
+        console.log("[SyncProvider] Detected data change, will sync...");
         addToast("正在同步至雲端...", "info", 1600);
         try {
-          // 1. 先備份舊的雲端資料
+          // ...備份與 setDoc
           const userDoc = doc(firestore, "users", user.uid);
           const docSnap = await getDoc(userDoc);
           if (docSnap.exists()) {
@@ -61,7 +65,7 @@ export default function SyncProvider() {
               await deleteDoc(doc(firestore, `users/${user.uid}/backup`, all[i]));
             }
           }
-          // 2. 推送目前本地資料到雲端
+          // 2. 推送本地資料到雲端
           const state = useFinanceStore.getState();
           const toPlain = (arr) => (arr || []).map(x => (x && typeof x.toJSON === "function" ? x.toJSON() : x));
           const uploadData = {
@@ -81,11 +85,10 @@ export default function SyncProvider() {
           addToast("同步失敗：" + e.message, "error", 2500);
           console.error("[SyncProvider] 同步失敗：", e);
         }
-      }, 900) // 900ms debounce，避免多次重複寫入
+      }, 900)
     );
     unsubRef.current = unsub;
     return () => unsubRef.current?.();
-    // eslint-disable-next-line
   }, [user]);
 
   return null;
