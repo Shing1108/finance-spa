@@ -26,7 +26,6 @@ const getDailyTip = (dateStr) => {
   return tips[dayOfYear % tips.length];
 };
 
-// ==== LocalStorage 工具 ====
 const getFromLocalStorage = (key, defaultVal) => {
   try {
     const val = localStorage.getItem(key);
@@ -37,16 +36,23 @@ const saveToLocalStorage = (key, value) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
-// ==== Store ====
+// ==== 只初始化一次 currentDate ====
+function getInitialCurrentDate() {
+  const val = localStorage.getItem('currentDate');
+  if (val) return JSON.parse(val);
+  // 首次啟動才寫入今天
+  const today = dayjs().format("YYYY-MM-DD");
+  localStorage.setItem('currentDate', JSON.stringify(today));
+  return today;
+}
 
 export const useDayManagerStore = create((set, get) => ({
-  // 狀態
-  currentDate: getFromLocalStorage('currentDate', dayjs().format("YYYY-MM-DD")),
+  currentDate: getInitialCurrentDate(),
   importantDates: getFromLocalStorage('importantDates', [
-    { name: '小明生日', month: 5, day: 8 }
+    { name: '生日', month: 11, day: 8 }
   ]),
 
-  // 初始化
+  // 初始化（僅首次進入時可用）
   initDayManager: () => {
     const savedDate = getFromLocalStorage('currentDate', null);
     let currentDate;
@@ -63,7 +69,7 @@ export const useDayManagerStore = create((set, get) => ({
   // 取得今日理財小貼士
   getTodayTip: () => getDailyTip(get().currentDate),
 
-  // 開啟新的一天
+  // 開啟新的一天（**唯一允許自動變更 currentDate 的地方**）
   startNewDay: () => {
     const today = dayjs().format("YYYY-MM-DD");
     if (get().currentDate === today) {
@@ -197,7 +203,7 @@ export const useDayManagerStore = create((set, get) => ({
     return events;
   },
 
-  // 重要日子管理（可選功能）
+  // 重要日子管理
   addImportantDate: (event) => {
     const importantDates = [...get().importantDates, event];
     saveToLocalStorage('importantDates', importantDates);
